@@ -12,6 +12,7 @@ sim_mix(
   steps,
   weights,
   one_sided,
+  thetas = c(rep(1/M, M)),
   N_low = 25,
   N_high = 500,
   N_shape = 2,
@@ -32,6 +33,8 @@ sim_mix(
 \item{weights}{relative publication probabilities}
 
 \item{one_sided}{whether selection is one or two-sided}
+
+\item{thetas}{mixing weights, defaults to equal weight for each component}
 
 \item{N_low}{lower bound on primary study sample sizes}
 

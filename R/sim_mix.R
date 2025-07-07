@@ -8,13 +8,14 @@
 #' @param steps p-value cutoffs (one-sided p-values). Currently only supports one or two steps.
 #' @param weights relative publication probabilities
 #' @param one_sided whether selection is one or two-sided
+#' @param thetas mixing weights, defaults to equal weight for each component
 #' @param N_low lower bound on primary study sample sizes
 #' @param N_high upper bound on primary study sample sizes
 #' @param N_shape shape of negative binomial distribution to generate sample sizes (see Maier et al., 2023)
 #' @param N_scale scale of negative binomial distribution to generate sample sizes (see Maier et al., 2023)
 #' @return A data frame with effect sizes and standard errors
 #'
-sim_mix <- function(K, M, mu, tau, steps, weights, one_sided, N_low = 25, N_high = 500, N_shape = 2, N_scale = 58){
+sim_mix <- function(K, M, mu, tau, steps, weights, one_sided, thetas = c(rep(1/M, M)), N_low = 25, N_high = 500, N_shape = 2, N_scale = 58){
 
   #simulate sample sizes from negative binomial distribution (see Maier et al., 2023)
   N_seq <- seq(N_low,N_high,1)
@@ -36,7 +37,7 @@ sim_mix <- function(K, M, mu, tau, steps, weights, one_sided, N_low = 25, N_high
   y <- c()
   sds <- c()
   while(length(y) < K){
-    cluster <- sample(1:M, 1) #select mixture component
+    cluster <- sample(1:M, 1, prob = thetas) #select mixture component
     delta_i <- rnorm(1, mu[cluster], tau[cluster]) #simulate true effect sizes
 
     n_i <- sample(N_seq, 1, TRUE, N_den)/2 #select sample size using negative binomial density
