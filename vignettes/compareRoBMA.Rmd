@@ -1,0 +1,131 @@
+---
+title: "Vignette Title"
+author: "Vignette Author"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Comparing Metamix Selection Model Implementation Against RoBMA}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+This vignette compares inferneces from the metamix package to robust Bayesian meta-analysis. Metamix does not currently directly implement Bayesian model-averaging (though model-averaging could be easily done using the resulting rstan objects and averaging their posterior distributions weighted by their posterior model probabilities). Instead, we compare selected models implemented in RoBMA to metamix. For a single component model the priors and likelihood function between metamix and RoBMA are the same with the exception that metamix uses a different prior on tau (by default normal(0, 0.2) because a narrower prior on tau is more desirable for mixture modelling) an dthat metamix is implemented in stan, whereas RoBMA is implemented in R. Overall, this vignette should therefore be considered as an illustrative sanity check on the selection model implementation of metamix. I also conducted a large simulation study to test the performance of the models and other sanity checks, which more directly cover mixture models are implemented in the test functions of the package.  
+
+## Random Effects Meta-Analysis 
+
+Let us simulate some data for a random effects meta-analysis with 100 observations using the sim_mix function from the metamix package. 
+
+The code below simulates 300 studies for a meta-analysis with $mu - 0$ and heterogeneity $tau = 0.2$, because all the relative publication probabilities are set to 1, this assumes no publication bias. The primary study sample sizes are sampled from a negative binomial distribution with N_low = 25, N_high = 500, N_shape = 2, N_scale = 58 based on empirical sample sizes for primary studies in meta-analyses (for detail see Maier et al., 2023). The function then returns a dataframe with effect sizes and standard errors.
+
+```{r}
+library(metamix)
+library(rstan)
+set.seed(42)
+dat <- sim_mix(K = 300, M = 1, mu = 0, tau = 0.2, steps = c(0.5, 0.95), weights = c(1,1,1), one_sided = T)
+```
+
+We can now go ahead and fit the random effects meta-analysis based on metamix and based on RoBMA. 
+
+```{r}
+fit_metamix <- re_mix(dat$y, dat$sds, M = 1, chains = 4, cores = 4)
+```
+
+```{r}
+library(RoBMA)
+fit_RoBMA <- RoBMA::RoBMA(d = dat$y, v = dat$sds^2,
+               priors_effect_null        = NULL,
+               priors_heterogeneity_null = NULL,
+               priors_bias               = NULL,
+               parallel = TRUE, seed = 1)
+```
+
+As expected both of the methods recover the data generating process well and lead to extremely similar inferences.
+
+```{r}
+summary(fit_RoBMA)
+rstan::summary(fit_metamix, pars = c("mu", "tau"))$summary[ , c("mean", "2.5%", "97.5%")]
+
+```
+
+## One Sided Selection
+
+Next let us consider one-sided selection. We can introduce publication bias by modifying \texttt{sim_mix} by adjusting the relative publication probabilities. Let us assume nonsignificant studies are 20\% as likely to be published as studies that are significant one a two-sided test (p < .025 on one-sided $p$-values), and studies that are significant on a one-sided test but not on a two sided test (i.e., 0.025 < p < .05) are half as likely to be published compared to studies that are significant on a two-sided test. We can adjust the publication probabilities in the sim_mix function to generate this data. 
+
+```{r}
+set.seed(123)
+dat_pb <- sim_mix(K = 300, M = 1, mu = 0, tau = 0.2, steps = c(0.95, 0.975), weights = c(0.2,0.5,1), one_sided = T)
+```
+
+When we visualize the data we can see a cutoff at the $z$-values corresponding to $p = .05$ and $p = .025$. 
+
+```{r}
+z = dat_pb$y/dat_pb$sds
+hist(z, breaks = 100)
+abline(v = qnorm(0.95), col = "red", lty = 3)
+abline(v = qnorm(0.975), col = "red", lty = 3)
+```
+
+Let us know adjust for this publication bias using metamix and RoBMA. Note the slightly different direction. Whereas RoBMA assumes that effect sizes are coined in the direct direction, metamix can accomodate selection on positive effect sizes (used here with cutoffs c(0.95, 0.975)) and negative effect sizes, which would be c(0.05, 0.025).
+
+```{r}
+start_time <- Sys.time()
+fit_RoBMA_pb <- RoBMA(d = dat_pb$y, v = dat_pb$sds^2,
+                 priors_bias = list(prior_weightfunction(distribution = "one.sided",
+                                                         parameters = list(alpha = c(1, 1, 1),
+                                                                           steps = c(0.025, 0.05)),
+                                                         prior_weights = 1)),
+                 priors_effect_null = NULL,
+                 priors_heterogeneity_null = NULL,
+                 priors_bias_null = NULL, 
+                 parallel = TRUE)
+RoBMA_time <- Sys.time() - start_time
+```
+
+```{r}
+start_time <- Sys.time()
+fit_metamix_pb <- sel_mix(dat_pb$y, dat_pb$sds, M = 1, steps = c(0.95, 0.975), chains = 4, cores = 4)
+metamix_time <- Sys.time() - start_time
+```
+
+
+Again both of the methods recover the data generating process well and lead to extremely similar inferences.
+
+```{r}
+summary(fit_RoBMA_pb)
+rstan::summary(fit_metamix_pb, pars = c("mu", "tau", "omega"))$summary[ , c("mean", "2.5%", "97.5%")]
+```
+
+However, due to the implementation in stan rather than jags metamix evaluates the models considerably faster. RoBMA took `r round(as.numeric(RoBMA_time, units = "secs"), 2)` seconds, whereas metamix took `r round(as.numeric(metamix_time, units = "secs"), 2)` seconds, around three times faster. 
+
+## Two Sided Selection
+
+We can analogously compare two sided selection. Which again leads to similar results for the two methods. 
+
+```{r}
+set.seed(123)
+dat_pb2 <- sim_mix(K = 300, M = 1, mu = 0, tau = 0.2, steps = c(0.95, 0.975), weights = c(0.2,0.5,1), one_sided = FALSE)
+
+fit_RoBMA_pb2 <- RoBMA(d = dat_pb2$y, v = dat_pb2$sds^2,
+                 priors_bias = list(prior_weightfunction(distribution = "two.sided",
+                                                         parameters = list(alpha = c(1, 1, 1),
+                                                                           steps = c(0.025, 0.05)),
+                                                         prior_weights = 1)),
+                 priors_effect_null = NULL,
+                 priors_heterogeneity_null = NULL,
+                 priors_bias_null = NULL, 
+                 parallel = TRUE)
+
+fit_metamix_pb2 <- sel_mix(dat_pb2$y, dat_pb2$sds, M = 1, steps = c(0.95, 0.975), one_sided = FALSE, chains = 4, cores = 4)
+```
+
+```{r}
+summary(fit_RoBMA_pb2)
+rstan::summary(fit_metamix_pb2, pars = c("mu", "tau", "omega"))$summary[ , c("mean", "2.5%", "97.5%")]
+```
