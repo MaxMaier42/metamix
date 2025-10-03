@@ -126,7 +126,21 @@ generated quantities {
       real y_candidate = normal_rng(mu[component], sigma);
 
       // Option B (more consistent with model interval usage): omega[I[i]]
-      real p_select = omega[I[i]];
+            // 4. Compute z-statistic using only within-study SD sqrt(v[i])
+      real z = y_candidate / sqrt(v[i]);
+      if (one_sided == 0) {
+        z = fabs(z);   // two-sided: use absolute value
+      }
+
+      // 5. Interval index = 1 + number of cutpoints passed
+      int interval_idx = 1;
+      for (c in 1:n_step) {
+        if (z > crit_v[c])
+          interval_idx += 1;
+        else
+
+      real p_select = omega[interval_idx]
+
 
       if (p_select >= 1) {
         // Always accept (no RNG call)
