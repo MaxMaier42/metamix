@@ -128,10 +128,15 @@ generated quantities {
       // Option B (more consistent with model interval usage): omega[I[i]]
       real p_select = omega[I[i]];
 
-      // 5. Bernoulli acceptance
-      if (bernoulli_rng(p_select) == 1) {
+      if (p_select >= 1) {
+        // Always accept (no RNG call)
         filled += 1;
         y_rep[filled] = y_candidate;
+      } else {
+        if (bernoulli_rng(p_select) == 1) {
+          filled += 1;
+          y_rep[filled] = y_candidate;
+        }
       }
     }
 
