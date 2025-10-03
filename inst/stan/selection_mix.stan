@@ -139,7 +139,7 @@ generated quantities {
           interval_idx += 1;
         else
 
-      real p_select = omega[interval_idx]
+      real p_select = omega[interval_idx];
 
 
       if (p_select >= 1) {
