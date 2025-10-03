@@ -11,7 +11,7 @@
 #' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains).
 #' @return An object of class `stanfit` returned by `rstan::sampling`
 #'
-sel_mix <- function(y, sd, M, steps = c(0.5, 0.95), one_sided = TRUE, mu_sd = 1, tau_sd = 0.2, ...){
+sel_mix <- function(y, sd, M, steps = c(0.9, 0.95), one_sided = TRUE, mu_sd = 1, tau_sd = 0.2, ...){
   n_step <- length(steps)
   if(!(n_step == 1 | n_step == 2)){
     stop("Please specify one or two steps. The package does not currently support larger step numbers.")
@@ -19,6 +19,10 @@ sel_mix <- function(y, sd, M, steps = c(0.5, 0.95), one_sided = TRUE, mu_sd = 1,
 
   if(mu_sd <= 0 | tau_sd <= 0){
     stop("mu_sd and tau_sd must be > 0.")
+  }
+
+  if(steps[1] <= .5 & !one_sided){
+    stop("all cutoffs must be larger .5 for two-sided selection.")
   }
 
   ### assign steps
