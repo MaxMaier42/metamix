@@ -129,7 +129,7 @@ generated quantities {
             // 4. Compute z-statistic using only within-study SD sqrt(v[i])
       real z = y_candidate / sqrt(v[i]);
       if (one_sided == 0) {
-        z = fabs(z);   // two-sided: use absolute value
+        z = abs(z);   // two-sided: use absolute value
       }
 
       // 5. Interval index = 1 + number of cutpoints passed
