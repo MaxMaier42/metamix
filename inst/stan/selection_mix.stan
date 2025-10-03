@@ -89,6 +89,8 @@ model {
 
 generated quantities {
   matrix[K, M] posterior_probs;
+  vector[K] y_rep;
+
 
   for (i in 1:K) {
     vector[M] log_weights;
@@ -103,6 +105,41 @@ generated quantities {
       posterior_probs[i, m] = exp(log_weights[m] - log_sum_exp(log_weights));
     }
   }
+  //assumes that the primary study variances do not systematically differ between components
+    int filled = 0;
+    int max_attempts = 50 * K;   // Safety cap; adjust if acceptance low
+    int attempts = 0;
+    // Precompute a uniform probability vector for picking i
+    vector[K] uni_prob = rep_vector(1.0 / K, K);
+
+    while (filled < K && attempts < max_attempts) {
+      attempts += 1;
+
+      // 1. Sample study index i uniformly
+      int i = categorical_rng(uni_prob);   // uniform over 1..K
+
+      // 2. Sample mixture component
+      int component = categorical_rng(theta);
+
+      // 3. Draw candidate
+      real sigma = sqrt(v[i] + square(tau[component]));
+      real y_candidate = normal_rng(mu[component], sigma);
+
+      // Option B (more consistent with model interval usage): omega[I[i]]
+      real p_select = omega[I[i]];
+
+      // 5. Bernoulli acceptance
+      if (bernoulli_rng(p_select) == 1) {
+        filled += 1;
+        y_rep[filled] = y_candidate;
+      }
+    }
+
+    // Optional: if not all filled (rare if max_attempts high), repeat last accepted value
+    if (filled < K) {
+      for (j in (filled + 1):K)
+        y_rep[j] = not_a_number();
+    }
 }
 
 
