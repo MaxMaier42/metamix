@@ -137,7 +137,7 @@ generated quantities {
       for (c in 1:n_step) {
         if (z > crit_v[c])
           interval_idx += 1;
-        else
+      }
 
       real p_select = omega[interval_idx];
 
