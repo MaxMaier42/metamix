@@ -33,6 +33,7 @@ model {
 
 generated quantities {
   matrix[K, M] posterior_probs;
+  vector[K] y_rep; // posterior predictive samples
 
   for (i in 1:K) {
     vector[M] log_weights;
@@ -41,6 +42,13 @@ generated quantities {
     for (m in 1:M) {
       log_weights[m] = log(theta[m]) + normal_lpdf(y[i] | mu[m], sqrt(v[i] + tau[m]^2));
     }
+
+    // Generate posterior predictive sample
+    // First, sample which component this observation comes from
+    int component = categorical_rng(theta);
+
+    // Then, sample from that component's distribution
+    y_rep[i] = normal_rng(mu[component], sqrt(v[i] + tau[component]^2));
 
     // Normalize using log_sum_exp trick to avoid underflow
     for (m in 1:M) {
