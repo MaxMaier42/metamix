@@ -105,7 +105,6 @@ generated quantities {
       posterior_probs[i, m] = exp(log_weights[m] - log_sum_exp(log_weights));
     }
   }
-  //assumes that the primary study variances do not systematically differ between components
     int filled = 0;
     int max_attempts = 50 * K;   // Safety cap; adjust if acceptance low
     int attempts = 0;
@@ -117,9 +116,10 @@ generated quantities {
 
       // 1. Sample study index i uniformly
       int i = categorical_rng(uni_prob);   // uniform over 1..K
+      vector[M] resp = to_vector(posterior_probs[i]);
 
       // 2. Sample mixture component
-      int component = categorical_rng(theta);
+      int component = categorical_rng(resp);
 
       // 3. Draw candidate
       real sigma = sqrt(v[i] + square(tau[component]));

@@ -27,7 +27,7 @@ namespace model_selection_mix_namespace {
 using stan::model::model_base_crtp;
 using namespace stan::math;
 stan::math::profile_map profiles__;
-static constexpr std::array<const char*, 119> locations_array__ =
+static constexpr std::array<const char*, 121> locations_array__ =
   {" (found before start of program)",
   " (in 'string', line 14, column 2 to column 16)",
   " (in 'string', line 15, column 2 to column 29)",
@@ -36,10 +36,10 @@ static constexpr std::array<const char*, 119> locations_array__ =
   " (in 'string', line 20, column 2 to column 27)",
   " (in 'string', line 86, column 2 to column 31)",
   " (in 'string', line 87, column 2 to column 18)",
-  " (in 'string', line 100, column 4 to column 19)",
-  " (in 'string', line 101, column 4 to column 30)",
-  " (in 'string', line 102, column 4 to column 21)",
-  " (in 'string', line 104, column 4 to column 48)",
+  " (in 'string', line 99, column 4 to column 19)",
+  " (in 'string', line 100, column 4 to column 30)",
+  " (in 'string', line 101, column 4 to column 21)",
+  " (in 'string', line 103, column 4 to column 48)",
   " (in 'string', line 21, column 2 to column 36)",
   " (in 'string', line 89, column 11 to column 12)",
   " (in 'string', line 89, column 4 to column 26)",
@@ -51,9 +51,11 @@ static constexpr std::array<const char*, 119> locations_array__ =
   " (in 'string', line 95, column 4 to line 97, column 5)",
   " (in 'string', line 88, column 17 to line 98, column 3)",
   " (in 'string', line 88, column 2 to line 98, column 3)",
-  " (in 'string', line 106, column 6 to column 20)",
-  " (in 'string', line 108, column 6 to column 40)",
-  " (in 'string', line 110, column 6 to column 45)",
+  " (in 'string', line 105, column 6 to column 20)",
+  " (in 'string', line 107, column 6 to column 40)",
+  " (in 'string', line 108, column 13 to column 14)",
+  " (in 'string', line 108, column 6 to column 53)",
+  " (in 'string', line 110, column 6 to column 44)",
   " (in 'string', line 112, column 6 to column 55)",
   " (in 'string', line 113, column 6 to column 58)",
   " (in 'string', line 116, column 6 to column 40)",
@@ -75,8 +77,8 @@ static constexpr std::array<const char*, 119> locations_array__ =
   " (in 'string', line 130, column 8 to column 36)",
   " (in 'string', line 127, column 25 to line 131, column 7)",
   " (in 'string', line 127, column 6 to line 136, column 7)",
-  " (in 'string', line 105, column 50 to line 137, column 5)",
-  " (in 'string', line 105, column 4 to line 137, column 5)",
+  " (in 'string', line 104, column 50 to line 137, column 5)",
+  " (in 'string', line 104, column 4 to line 137, column 5)",
   " (in 'string', line 141, column 8 to column 34)",
   " (in 'string', line 140, column 6 to line 141, column 34)",
   " (in 'string', line 139, column 20 to line 142, column 5)",
@@ -146,7 +148,7 @@ static constexpr std::array<const char*, 119> locations_array__ =
   " (in 'string', line 86, column 9 to column 10)",
   " (in 'string', line 86, column 12 to column 13)",
   " (in 'string', line 87, column 9 to column 10)",
-  " (in 'string', line 104, column 11 to column 12)"};
+  " (in 'string', line 103, column 11 to column 12)"};
 #include <stan_meta_header.hpp>
 class model_selection_mix final : public model_base_crtp<model_selection_mix> {
 private:
@@ -185,35 +187,35 @@ public:
     try {
       int pos__ = std::numeric_limits<int>::min();
       pos__ = 1;
-      current_statement__ = 96;
+      current_statement__ = 98;
       context__.validate_dims("data initialization", "n_step", "int",
         std::vector<size_t>{});
       n_step = std::numeric_limits<int>::min();
-      current_statement__ = 96;
+      current_statement__ = 98;
       n_step = context__.vals_i("n_step")[(1 - 1)];
-      current_statement__ = 96;
+      current_statement__ = 98;
       stan::math::check_greater_or_equal(function__, "n_step", n_step, 1);
-      current_statement__ = 96;
+      current_statement__ = 98;
       stan::math::check_less_or_equal(function__, "n_step", n_step, 2);
-      current_statement__ = 97;
+      current_statement__ = 99;
       context__.validate_dims("data initialization", "K", "int",
         std::vector<size_t>{});
       K = std::numeric_limits<int>::min();
-      current_statement__ = 97;
+      current_statement__ = 99;
       K = context__.vals_i("K")[(1 - 1)];
-      current_statement__ = 97;
+      current_statement__ = 99;
       stan::math::check_greater_or_equal(function__, "K", K, 0);
-      current_statement__ = 98;
+      current_statement__ = 100;
       context__.validate_dims("data initialization", "M", "int",
         std::vector<size_t>{});
       M = std::numeric_limits<int>::min();
-      current_statement__ = 98;
-      M = context__.vals_i("M")[(1 - 1)];
-      current_statement__ = 98;
-      stan::math::check_greater_or_equal(function__, "M", M, 0);
-      current_statement__ = 99;
-      stan::math::validate_non_negative_index("y", "K", K);
       current_statement__ = 100;
+      M = context__.vals_i("M")[(1 - 1)];
+      current_statement__ = 100;
+      stan::math::check_greater_or_equal(function__, "M", M, 0);
+      current_statement__ = 101;
+      stan::math::validate_non_negative_index("y", "K", K);
+      current_statement__ = 102;
       context__.validate_dims("data initialization", "y", "double",
         std::vector<size_t>{static_cast<size_t>(K)});
       y_data__ = Eigen::Matrix<double,-1,1>::Constant(K,
@@ -221,22 +223,22 @@ public:
       new (&y) Eigen::Map<Eigen::Matrix<double,-1,1>>(y_data__.data(), K);
       {
         std::vector<local_scalar_t__> y_flat__;
-        current_statement__ = 100;
+        current_statement__ = 102;
         y_flat__ = context__.vals_r("y");
-        current_statement__ = 100;
+        current_statement__ = 102;
         pos__ = 1;
-        current_statement__ = 100;
+        current_statement__ = 102;
         for (int sym1__ = 1; sym1__ <= K; ++sym1__) {
-          current_statement__ = 100;
+          current_statement__ = 102;
           stan::model::assign(y, y_flat__[(pos__ - 1)],
             "assigning variable y", stan::model::index_uni(sym1__));
-          current_statement__ = 100;
+          current_statement__ = 102;
           pos__ = (pos__ + 1);
         }
       }
-      current_statement__ = 101;
+      current_statement__ = 103;
       stan::math::validate_non_negative_index("v", "K", K);
-      current_statement__ = 102;
+      current_statement__ = 104;
       context__.validate_dims("data initialization", "v", "double",
         std::vector<size_t>{static_cast<size_t>(K)});
       v_data__ = Eigen::Matrix<double,-1,1>::Constant(K,
@@ -244,94 +246,94 @@ public:
       new (&v) Eigen::Map<Eigen::Matrix<double,-1,1>>(v_data__.data(), K);
       {
         std::vector<local_scalar_t__> v_flat__;
-        current_statement__ = 102;
+        current_statement__ = 104;
         v_flat__ = context__.vals_r("v");
-        current_statement__ = 102;
+        current_statement__ = 104;
         pos__ = 1;
-        current_statement__ = 102;
+        current_statement__ = 104;
         for (int sym1__ = 1; sym1__ <= K; ++sym1__) {
-          current_statement__ = 102;
+          current_statement__ = 104;
           stan::model::assign(v, v_flat__[(pos__ - 1)],
             "assigning variable v", stan::model::index_uni(sym1__));
-          current_statement__ = 102;
+          current_statement__ = 104;
           pos__ = (pos__ + 1);
         }
       }
-      current_statement__ = 102;
-      stan::math::check_greater_or_equal(function__, "v", v, 0);
-      current_statement__ = 103;
-      stan::math::validate_non_negative_index("crit_v", "n_step", n_step);
       current_statement__ = 104;
+      stan::math::check_greater_or_equal(function__, "v", v, 0);
+      current_statement__ = 105;
+      stan::math::validate_non_negative_index("crit_v", "n_step", n_step);
+      current_statement__ = 106;
       context__.validate_dims("data initialization", "crit_v", "double",
         std::vector<size_t>{static_cast<size_t>(n_step)});
       crit_v = std::vector<double>(n_step,
                  std::numeric_limits<double>::quiet_NaN());
-      current_statement__ = 104;
-      crit_v = context__.vals_r("crit_v");
-      current_statement__ = 105;
-      stan::math::validate_non_negative_index("I", "K", K);
       current_statement__ = 106;
+      crit_v = context__.vals_r("crit_v");
+      current_statement__ = 107;
+      stan::math::validate_non_negative_index("I", "K", K);
+      current_statement__ = 108;
       context__.validate_dims("data initialization", "I", "int",
         std::vector<size_t>{static_cast<size_t>(K)});
       I = std::vector<int>(K, std::numeric_limits<int>::min());
-      current_statement__ = 106;
+      current_statement__ = 108;
       I = context__.vals_i("I");
-      current_statement__ = 106;
+      current_statement__ = 108;
       stan::math::check_greater_or_equal(function__, "I", I, 1);
-      current_statement__ = 107;
+      current_statement__ = 109;
       context__.validate_dims("data initialization", "one_sided", "int",
         std::vector<size_t>{});
       one_sided = std::numeric_limits<int>::min();
-      current_statement__ = 107;
+      current_statement__ = 109;
       one_sided = context__.vals_i("one_sided")[(1 - 1)];
-      current_statement__ = 107;
+      current_statement__ = 109;
       stan::math::check_greater_or_equal(function__, "one_sided", one_sided,
         0);
-      current_statement__ = 107;
+      current_statement__ = 109;
       stan::math::check_less_or_equal(function__, "one_sided", one_sided, 1);
-      current_statement__ = 108;
+      current_statement__ = 110;
       context__.validate_dims("data initialization", "mu_sd", "double",
         std::vector<size_t>{});
       mu_sd = std::numeric_limits<double>::quiet_NaN();
-      current_statement__ = 108;
+      current_statement__ = 110;
       mu_sd = context__.vals_r("mu_sd")[(1 - 1)];
-      current_statement__ = 108;
+      current_statement__ = 110;
       stan::math::check_greater_or_equal(function__, "mu_sd", mu_sd, 0);
-      current_statement__ = 109;
+      current_statement__ = 111;
       context__.validate_dims("data initialization", "tau_sd", "double",
         std::vector<size_t>{});
       tau_sd = std::numeric_limits<double>::quiet_NaN();
-      current_statement__ = 109;
-      tau_sd = context__.vals_r("tau_sd")[(1 - 1)];
-      current_statement__ = 109;
-      stan::math::check_greater_or_equal(function__, "tau_sd", tau_sd, 0);
-      current_statement__ = 110;
-      stan::math::validate_non_negative_index("mu", "M", M);
       current_statement__ = 111;
+      tau_sd = context__.vals_r("tau_sd")[(1 - 1)];
+      current_statement__ = 111;
+      stan::math::check_greater_or_equal(function__, "tau_sd", tau_sd, 0);
+      current_statement__ = 112;
+      stan::math::validate_non_negative_index("mu", "M", M);
+      current_statement__ = 113;
       stan::math::validate_non_negative_index("tau", "M", M);
-      current_statement__ = 112;
+      current_statement__ = 114;
       omega_raw_1dim__ = std::numeric_limits<int>::min();
-      current_statement__ = 112;
+      current_statement__ = 114;
       omega_raw_1dim__ = (n_step + 1);
-      current_statement__ = 112;
+      current_statement__ = 114;
       stan::math::validate_positive_index("omega_raw", "n_step + 1",
         omega_raw_1dim__);
-      current_statement__ = 113;
+      current_statement__ = 115;
       stan::math::validate_positive_index("theta", "M", M);
-      current_statement__ = 114;
+      current_statement__ = 116;
       omega_1dim__ = std::numeric_limits<int>::min();
-      current_statement__ = 114;
+      current_statement__ = 116;
       omega_1dim__ = (n_step + 1);
-      current_statement__ = 114;
+      current_statement__ = 116;
       stan::math::validate_non_negative_index("omega", "n_step + 1",
         omega_1dim__);
-      current_statement__ = 115;
-      stan::math::validate_non_negative_index("posterior_probs", "K", K);
-      current_statement__ = 116;
-      stan::math::validate_non_negative_index("posterior_probs", "M", M);
       current_statement__ = 117;
-      stan::math::validate_non_negative_index("y_rep", "K", K);
+      stan::math::validate_non_negative_index("posterior_probs", "K", K);
       current_statement__ = 118;
+      stan::math::validate_non_negative_index("posterior_probs", "M", M);
+      current_statement__ = 119;
+      stan::math::validate_non_negative_index("y_rep", "K", K);
+      current_statement__ = 120;
       stan::math::validate_non_negative_index("uni_prob", "K", K);
     } catch (const std::exception& e) {
       stan::lang::rethrow_located(e, locations_array__[current_statement__]);
@@ -394,38 +396,38 @@ public:
       stan::model::assign(omega, stan::math::cumulative_sum(omega_raw),
         "assigning variable omega");
       {
-        current_statement__ = 53;
+        current_statement__ = 55;
         stan::math::validate_non_negative_index("log_theta", "M", M);
         Eigen::Matrix<local_scalar_t__,-1,1> log_theta =
           Eigen::Matrix<local_scalar_t__,-1,1>::Constant(M, DUMMY_VAR__);
-        current_statement__ = 54;
+        current_statement__ = 56;
         stan::model::assign(log_theta, stan::math::log(theta),
           "assigning variable log_theta");
-        current_statement__ = 55;
-        lp_accum__.add(stan::math::normal_lpdf<false>(mu, 0, mu_sd));
-        current_statement__ = 56;
-        lp_accum__.add(stan::math::normal_lpdf<false>(tau, 0, tau_sd));
         current_statement__ = 57;
+        lp_accum__.add(stan::math::normal_lpdf<false>(mu, 0, mu_sd));
+        current_statement__ = 58;
+        lp_accum__.add(stan::math::normal_lpdf<false>(tau, 0, tau_sd));
+        current_statement__ = 59;
         lp_accum__.add(stan::math::dirichlet_lpdf<false>(omega_raw,
                          stan::math::rep_vector(1, (n_step + 1))));
-        current_statement__ = 58;
+        current_statement__ = 60;
         lp_accum__.add(stan::math::dirichlet_lpdf<false>(theta,
                          stan::math::rep_vector(1, M)));
-        current_statement__ = 95;
+        current_statement__ = 97;
         for (int i = 1; i <= K; ++i) {
-          current_statement__ = 59;
+          current_statement__ = 61;
           stan::math::validate_non_negative_index("lps", "M", M);
           Eigen::Matrix<local_scalar_t__,-1,1> lps =
             Eigen::Matrix<local_scalar_t__,-1,1>::Constant(M, DUMMY_VAR__);
-          current_statement__ = 60;
+          current_statement__ = 62;
           stan::model::assign(lps, log_theta, "assigning variable lps");
-          current_statement__ = 76;
+          current_statement__ = 78;
           if (stan::math::logical_eq(one_sided, 1)) {
-            current_statement__ = 67;
+            current_statement__ = 69;
             if (stan::math::logical_eq(n_step, 1)) {
-              current_statement__ = 65;
+              current_statement__ = 67;
               for (int m = 1; m <= M; ++m) {
-                current_statement__ = 61;
+                current_statement__ = 63;
                 stan::model::assign(lps,
                   (stan::model::rvalue(lps, "lps", stan::model::index_uni(m))
                   +
@@ -439,7 +441,7 @@ public:
                         stan::model::rvalue(tau, "tau",
                           stan::model::index_uni(m)), 2))))),
                   "assigning variable lps", stan::model::index_uni(m));
-                current_statement__ = 62;
+                current_statement__ = 64;
                 stan::model::assign(lps,
                   (stan::model::rvalue(lps, "lps", stan::model::index_uni(m))
                   +
@@ -448,7 +450,7 @@ public:
                       stan::model::index_uni(
                         stan::model::rvalue(I, "I", stan::model::index_uni(i)))))),
                   "assigning variable lps", stan::model::index_uni(m));
-                current_statement__ = 63;
+                current_statement__ = 65;
                 stan::model::assign(lps,
                   (stan::model::rvalue(lps, "lps", stan::model::index_uni(m))
                   +
@@ -490,11 +492,11 @@ public:
                   "assigning variable lps", stan::model::index_uni(m));
               }
             }
-            current_statement__ = 74;
+            current_statement__ = 76;
             if (stan::math::logical_eq(n_step, 2)) {
-              current_statement__ = 72;
+              current_statement__ = 74;
               for (int m = 1; m <= M; ++m) {
-                current_statement__ = 68;
+                current_statement__ = 70;
                 stan::model::assign(lps,
                   (stan::model::rvalue(lps, "lps", stan::model::index_uni(m))
                   +
@@ -508,7 +510,7 @@ public:
                         stan::model::rvalue(tau, "tau",
                           stan::model::index_uni(m)), 2))))),
                   "assigning variable lps", stan::model::index_uni(m));
-                current_statement__ = 69;
+                current_statement__ = 71;
                 stan::model::assign(lps,
                   (stan::model::rvalue(lps, "lps", stan::model::index_uni(m))
                   +
@@ -517,7 +519,7 @@ public:
                       stan::model::index_uni(
                         stan::model::rvalue(I, "I", stan::model::index_uni(i)))))),
                   "assigning variable lps", stan::model::index_uni(m));
-                current_statement__ = 70;
+                current_statement__ = 72;
                 stan::model::assign(lps,
                   (stan::model::rvalue(lps, "lps", stan::model::index_uni(m))
                   +
@@ -653,13 +655,13 @@ public:
               }
             }
           }
-          current_statement__ = 92;
+          current_statement__ = 94;
           if (stan::math::logical_eq(one_sided, 0)) {
-            current_statement__ = 83;
+            current_statement__ = 85;
             if (stan::math::logical_eq(n_step, 1)) {
-              current_statement__ = 81;
+              current_statement__ = 83;
               for (int m = 1; m <= M; ++m) {
-                current_statement__ = 77;
+                current_statement__ = 79;
                 stan::model::assign(lps,
                   (stan::model::rvalue(lps, "lps", stan::model::index_uni(m))
                   +
@@ -673,7 +675,7 @@ public:
                         stan::model::rvalue(tau, "tau",
                           stan::model::index_uni(m)), 2))))),
                   "assigning variable lps", stan::model::index_uni(m));
-                current_statement__ = 78;
+                current_statement__ = 80;
                 stan::model::assign(lps,
                   (stan::model::rvalue(lps, "lps", stan::model::index_uni(m))
                   +
@@ -682,7 +684,7 @@ public:
                       stan::model::index_uni(
                         stan::model::rvalue(I, "I", stan::model::index_uni(i)))))),
                   "assigning variable lps", stan::model::index_uni(m));
-                current_statement__ = 79;
+                current_statement__ = 81;
                 stan::model::assign(lps,
                   (stan::model::rvalue(lps, "lps", stan::model::index_uni(m))
                   +
@@ -819,11 +821,11 @@ public:
                   "assigning variable lps", stan::model::index_uni(m));
               }
             }
-            current_statement__ = 90;
+            current_statement__ = 92;
             if (stan::math::logical_eq(n_step, 2)) {
-              current_statement__ = 88;
+              current_statement__ = 90;
               for (int m = 1; m <= M; ++m) {
-                current_statement__ = 84;
+                current_statement__ = 86;
                 stan::model::assign(lps,
                   (stan::model::rvalue(lps, "lps", stan::model::index_uni(m))
                   +
@@ -837,7 +839,7 @@ public:
                         stan::model::rvalue(tau, "tau",
                           stan::model::index_uni(m)), 2))))),
                   "assigning variable lps", stan::model::index_uni(m));
-                current_statement__ = 85;
+                current_statement__ = 87;
                 stan::model::assign(lps,
                   (stan::model::rvalue(lps, "lps", stan::model::index_uni(m))
                   +
@@ -846,7 +848,7 @@ public:
                       stan::model::index_uni(
                         stan::model::rvalue(I, "I", stan::model::index_uni(i)))))),
                   "assigning variable lps", stan::model::index_uni(m));
-                current_statement__ = 86;
+                current_statement__ = 88;
                 stan::model::assign(lps,
                   (stan::model::rvalue(lps, "lps", stan::model::index_uni(m))
                   +
@@ -1106,7 +1108,7 @@ public:
               }
             }
           }
-          current_statement__ = 93;
+          current_statement__ = 95;
           lp_accum__.add(stan::math::log_sum_exp(lps));
         }
       }
@@ -1249,7 +1251,7 @@ public:
       current_statement__ = 11;
       stan::model::assign(uni_prob, stan::math::rep_vector((1.0 / K), K),
         "assigning variable uni_prob");
-      current_statement__ = 48;
+      current_statement__ = 50;
       while ((stan::math::primitive_value(stan::math::logical_lt(filled, K))
              &&
              stan::math::primitive_value(
@@ -1259,73 +1261,83 @@ public:
         int i = std::numeric_limits<int>::min();
         current_statement__ = 24;
         i = stan::math::categorical_rng(uni_prob, base_rng__);
-        int component = std::numeric_limits<int>::min();
         current_statement__ = 25;
-        component = stan::math::categorical_rng(theta, base_rng__);
-        double sigma = std::numeric_limits<double>::quiet_NaN();
+        stan::math::validate_non_negative_index("resp", "M", M);
+        Eigen::Matrix<double,-1,1> resp =
+          Eigen::Matrix<double,-1,1>::Constant(M,
+            std::numeric_limits<double>::quiet_NaN());
         current_statement__ = 26;
+        stan::model::assign(resp,
+          stan::math::to_vector(
+            stan::model::rvalue(posterior_probs, "posterior_probs",
+              stan::model::index_uni(i))), "assigning variable resp");
+        int component = std::numeric_limits<int>::min();
+        current_statement__ = 27;
+        component = stan::math::categorical_rng(resp, base_rng__);
+        double sigma = std::numeric_limits<double>::quiet_NaN();
+        current_statement__ = 28;
         sigma = stan::math::sqrt(
                   (stan::model::rvalue(v, "v", stan::model::index_uni(i)) +
                   stan::math::square(
                     stan::model::rvalue(tau, "tau",
                       stan::model::index_uni(component)))));
         double y_candidate = std::numeric_limits<double>::quiet_NaN();
-        current_statement__ = 27;
+        current_statement__ = 29;
         y_candidate = stan::math::normal_rng(
                         stan::model::rvalue(mu, "mu",
                           stan::model::index_uni(component)), sigma,
                         base_rng__);
         double z = std::numeric_limits<double>::quiet_NaN();
-        current_statement__ = 28;
+        current_statement__ = 30;
         z = (y_candidate /
           stan::math::sqrt(
             stan::model::rvalue(v, "v", stan::model::index_uni(i))));
-        current_statement__ = 31;
+        current_statement__ = 33;
         if (stan::math::logical_eq(one_sided, 0)) {
-          current_statement__ = 29;
+          current_statement__ = 31;
           z = stan::math::abs(z);
         }
         int interval_idx = std::numeric_limits<int>::min();
-        current_statement__ = 32;
+        current_statement__ = 34;
         interval_idx = 1;
-        current_statement__ = 36;
+        current_statement__ = 38;
         for (int c = 1; c <= n_step; ++c) {
-          current_statement__ = 34;
+          current_statement__ = 36;
           if (stan::math::logical_gt(z,
                 stan::model::rvalue(crit_v, "crit_v",
                   stan::model::index_uni(c)))) {
-            current_statement__ = 33;
+            current_statement__ = 35;
             interval_idx = (interval_idx + 1);
           }
         }
         double p_select = std::numeric_limits<double>::quiet_NaN();
-        current_statement__ = 37;
+        current_statement__ = 39;
         p_select = stan::model::rvalue(omega, "omega",
                      stan::model::index_uni(interval_idx));
-        current_statement__ = 46;
+        current_statement__ = 48;
         if (stan::math::logical_gte(p_select, 1)) {
-          current_statement__ = 43;
+          current_statement__ = 45;
           filled = (filled + 1);
-          current_statement__ = 44;
+          current_statement__ = 46;
           stan::model::assign(y_rep, y_candidate, "assigning variable y_rep",
             stan::model::index_uni(filled));
         } else {
-          current_statement__ = 41;
+          current_statement__ = 43;
           if (stan::math::logical_eq(
                 stan::math::bernoulli_rng(p_select, base_rng__), 1)) {
-            current_statement__ = 38;
+            current_statement__ = 40;
             filled = (filled + 1);
-            current_statement__ = 39;
+            current_statement__ = 41;
             stan::model::assign(y_rep, y_candidate,
               "assigning variable y_rep", stan::model::index_uni(filled));
           }
         }
       }
-      current_statement__ = 52;
+      current_statement__ = 54;
       if (stan::math::logical_lt(filled, K)) {
-        current_statement__ = 50;
+        current_statement__ = 52;
         for (int j = (filled + 1); j <= K; ++j) {
-          current_statement__ = 49;
+          current_statement__ = 51;
           stan::model::assign(y_rep, stan::math::not_a_number(),
             "assigning variable y_rep", stan::model::index_uni(j));
         }
