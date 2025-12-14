@@ -37,22 +37,31 @@ generated quantities {
 
   for (i in 1:K) {
     vector[M] log_weights;
+    vector[M] resp;     // normalized responsibilities for obs i
+
 
     // Compute log(prior × likelihood) for each component
     for (m in 1:M) {
       log_weights[m] = log(theta[m]) + normal_lpdf(y[i] | mu[m], sqrt(v[i] + tau[m]^2));
     }
+    
+    for (m in 1:M) {
+      resp[m] = exp(log_weights[m] - log_sum_exp(log_weights));
+    }
+    
+    for (m in 1:M) {
+      posterior_probs[i, m] = resp[m];
+    }
 
     // Generate posterior predictive sample
     // First, sample which component this observation comes from
-    int component = categorical_rng(theta);
+
+    int component = categorical_rng(resp);
 
     // Then, sample from that component's distribution
     y_rep[i] = normal_rng(mu[component], sqrt(v[i] + tau[component]^2));
 
     // Normalize using log_sum_exp trick to avoid underflow
-    for (m in 1:M) {
-      posterior_probs[i, m] = exp(log_weights[m] - log_sum_exp(log_weights));
-    }
+
   }
 }
