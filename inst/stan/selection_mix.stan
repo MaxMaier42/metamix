@@ -114,12 +114,15 @@ generated quantities {
     while (filled < K && attempts < max_attempts) {
       attempts += 1;
 
-      // 1. Sample study index i uniformly
-      int i = categorical_rng(uni_prob);   // uniform over 1..K
-      vector[M] resp = to_vector(posterior_probs[i]);
-
-      // 2. Sample mixture component
-      int component = categorical_rng(resp);
+      // 1) Sample component from mixture weights (NOT posterior_probs[i])
+      int component = categorical_rng(theta);
+    
+      // 2) Sample a study index i conditional on component
+      //    (preserves component-specific variance distribution empirically)
+      vector[K] p_i;
+      for (k in 1:K) p_i[k] = posterior_probs[k, component];
+      p_i = p_i / sum(p_i);              // normalize
+      int i = categorical_rng(p_i);
 
       // 3. Draw candidate
       real sigma = sqrt(v[i] + square(tau[component]));
