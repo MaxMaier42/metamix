@@ -90,6 +90,8 @@ model {
 generated quantities {
   matrix[K, M] posterior_probs;
   vector[K] y_rep;
+  vector[M] avg_omega;  // Average omega for each component
+  simplex[M] theta_preselection;  // Mixture proportions before selection
 
 
   for (i in 1:K) {
@@ -105,17 +107,39 @@ generated quantities {
       posterior_probs[i, m] = exp(log_weights[m] - log_sum_exp(log_weights));
     }
   }
+  
+  // Calculate average omega for each component
+  // weighted by marginal likelihood of each study under that component
+  for (m in 1:M) {
+    vector[K] marginal_likelihoods;
+    vector[K] weighted_omegas;
+    
+    for (i in 1:K) {
+      marginal_likelihoods[i] = normal_lpdf(y[i] | mu[m], sqrt(v[i] + tau[m]^2));
+      weighted_omegas[i] = exp(marginal_likelihoods[i] + log(omega[I[i]]));
+    }
+    
+    avg_omega[m] = sum(weighted_omegas) / sum(marginal_likelihoods);
+  }
+  
+  // Reweight theta to get pre-selection proportions
+  {
+    vector[M] theta_adjusted;
+    for (m in 1:M) {
+      theta_adjusted[m] = theta[m] / avg_omega[m];
+    }
+    theta_preselection = theta_adjusted / sum(theta_adjusted);  // Renormalize to simplex
+  }
+  
+  
     int filled = 0;
     int max_attempts = 50 * K;   // Safety cap; adjust if acceptance low
     int attempts = 0;
-    // Precompute a uniform probability vector for picking i
-    vector[K] uni_prob = rep_vector(1.0 / K, K);
-
     while (filled < K && attempts < max_attempts) {
       attempts += 1;
 
       // 1) Sample component from mixture weights (NOT posterior_probs[i])
-      int component = categorical_rng(theta);
+      int component = categorical_rng(theta_preselection);
     
       // 2) Sample a study index i conditional on component
       //    (preserves component-specific variance distribution empirically)
@@ -128,8 +152,7 @@ generated quantities {
       real sigma = sqrt(v[i] + square(tau[component]));
       real y_candidate = normal_rng(mu[component], sigma);
 
-      // Option B (more consistent with model interval usage): omega[I[i]]
-            // 4. Compute z-statistic using only within-study SD sqrt(v[i])
+      // 4. Compute z-statistic using only within-study SD sqrt(v[i])
       real z = y_candidate / sqrt(v[i]);
       if (one_sided == 0) {
         z = abs(z);   // two-sided: use absolute value
