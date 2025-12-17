@@ -1,3 +1,28 @@
+data {
+  int<lower=1, upper = 2> n_step;
+  int<lower=0> K; // number of studies
+  int<lower=0> M; //number of mixture components
+  vector[K] y; // observed effect sizes
+  vector<lower=0>[K] v; // variances of observed effects
+  array[n_step] real crit_v;
+  array[K] int<lower=1> I; // index for intervals based on p-value
+  int<lower=0, upper=1> one_sided;
+  real<lower=0> mu_sd; //standard deviation of prior on mu
+  real<lower=0> tau_sd; //standard deviation of prior on tau
+}
+
+parameters {
+  ordered[M] mu; // overall mean effect size
+  array[M] real<lower=0> tau; // inverse of between-study variance
+  simplex[n_step+1] omega_raw; //
+  simplex[M] theta; //
+}
+
+transformed parameters {
+  vector[n_step + 1] omega;  // (bias-related) publication bias
+  omega = cumulative_sum(omega_raw);
+}
+
 model {
   vector[M] log_theta = log(theta);
   
