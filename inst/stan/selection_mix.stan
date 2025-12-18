@@ -154,7 +154,7 @@ generated quantities {
       // 3. Draw candidate
       real sigma = sqrt(v[i] + square(tau[component]));
       real y_candidate = normal_rng(mu[component], sigma);
-      real sd_candidate = sqrt[v[i]];
+      real sd_candidate = sqrt(v[i]);
 
       // 4. Compute z-statistic using only within-study SD sqrt(v[i])
       real z = y_candidate / sqrt(v[i]);
