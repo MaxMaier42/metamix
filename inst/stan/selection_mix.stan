@@ -13,7 +13,7 @@ data {
 
 parameters {
   ordered[M] mu; // overall mean effect size
-  array[M] real<lower=0> tau; // inverse of between-study variance
+  array[M] real<lower=0> tau; 
   simplex[n_step+1] omega_raw; //
   simplex[M] theta; //
 }
@@ -91,6 +91,7 @@ model {
 generated quantities {
   matrix[K, M] posterior_probs;
   vector[K] y_rep;
+  vector[K] sd_rep;          // within-study SD used for z and as "study SD"
   vector[M] avg_omega;  // Average omega for each component
   simplex[M] theta_preselection;  // Mixture proportions before selection
 
@@ -153,6 +154,7 @@ generated quantities {
       // 3. Draw candidate
       real sigma = sqrt(v[i] + square(tau[component]));
       real y_candidate = normal_rng(mu[component], sigma);
+      real sd_candidate = sqrt[v[i]];
 
       // 4. Compute z-statistic using only within-study SD sqrt(v[i])
       real z = y_candidate / sqrt(v[i]);
@@ -174,15 +176,16 @@ generated quantities {
         // Always accept (no RNG call)
         filled += 1;
         y_rep[filled] = y_candidate;
+        sd_rep[filled] = sd_candidate;
       } else {
         if (bernoulli_rng(p_select) == 1) {
           filled += 1;
           y_rep[filled] = y_candidate;
+          sd_rep[filled] = sd_candidate;
         }
       }
     }
 
-    // Optional: if not all filled (rare if max_attempts high), repeat last accepted value
     if (filled < K) {
       for (j in (filled + 1):K)
         y_rep[j] = not_a_number();
