@@ -33,35 +33,43 @@ model {
 
 generated quantities {
   matrix[K, M] posterior_probs;
-  vector[K] y_rep; // posterior predictive samples
+  vector[K] y_rep;           // posterior predictive effect sizes
+  vector[K] sd_rep;          // within-study SDs (sampled from empirical distribution)
 
+  // ===== 1. Compute posterior component probabilities =====
   for (i in 1:K) {
     vector[M] log_weights;
-    vector[M] resp;     // normalized responsibilities for obs i
-
 
     // Compute log(prior × likelihood) for each component
     for (m in 1:M) {
       log_weights[m] = log(theta[m]) + normal_lpdf(y[i] | mu[m], sqrt(v[i] + tau[m]^2));
     }
     
+    // Normalize to get responsibilities
     for (m in 1:M) {
-      resp[m] = exp(log_weights[m] - log_sum_exp(log_weights));
+      posterior_probs[i, m] = exp(log_weights[m] - log_sum_exp(log_weights));
     }
+  }
+  
+  // ===== 2. Generate posterior predictive samples =====
+  for (i in 1:K) {
+    // Sample component from MIXTURE WEIGHTS (not posterior responsibilities)
+    int component = categorical_rng(theta);
     
-    for (m in 1:M) {
-      posterior_probs[i, m] = resp[m];
+    // Sample a study index to borrow its within-study variance structure
+    // Weight by how much that study belongs to this component
+    vector[K] p_study;
+    for (k in 1:K) {
+      p_study[k] = posterior_probs[k, component];
     }
-
-    // Generate posterior predictive sample
-    // First, sample which component this observation comes from
-
-    int component = categorical_rng(resp);
-
-    // Then, sample from that component's distribution
-    y_rep[i] = normal_rng(mu[component], sqrt(v[i] + tau[component]^2));
-
-    // Normalize using log_sum_exp trick to avoid underflow
-
+    p_study = p_study / sum(p_study);  // normalize
+    int study_idx = categorical_rng(p_study);
+    
+    // Use the sampled study's within-study variance
+    sd_rep[i] = sqrt(v[study_idx]);
+    
+    // Generate effect size from the component, using sampled variance structure
+    y_rep[i] = normal_rng(mu[component], sqrt(v[study_idx]) + + square(tau[component]));
+    
   }
 }
