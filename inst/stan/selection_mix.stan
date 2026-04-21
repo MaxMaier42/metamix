@@ -13,21 +13,24 @@ data {
 
 parameters {
   ordered[M] mu; // overall mean effect size
-  array[M] real<lower=0> tau; 
+  array[M] real log_tau; // log-scale heterogeneity (unconstrained)
   simplex[n_step+1] omega_raw; //
   simplex[M] theta; //
 }
 
 transformed parameters {
   vector[n_step + 1] omega;  // (bias-related) publication bias
+  array[M] real<lower=0> tau;
   omega = cumulative_sum(omega_raw);
+  for (m in 1:M) tau[m] = exp(log_tau[m]);
 }
 
 model {
   vector[M] log_theta = log(theta);
   // Priors
   target += normal_lpdf(mu | 0, mu_sd);
-  target += normal_lpdf(tau | 0, tau_sd);
+  for (m in 1:M)
+    target += normal_lpdf(tau[m] | 0, tau_sd) + log_tau[m];
   target += dirichlet_lpdf(omega_raw | rep_vector(1, n_step+1));
   target += dirichlet_lpdf(theta | rep_vector(1, M));
 

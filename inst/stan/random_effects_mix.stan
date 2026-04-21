@@ -9,16 +9,22 @@ data {
 
 parameters {
   ordered[M] mu; // overall mean effect size
-  array[M] real<lower=0> tau; // inverse of between-study variance
+  array[M] real log_tau; // log-scale heterogeneity (unconstrained)
   simplex[M] theta; //
 
+}
+
+transformed parameters {
+  array[M] real<lower=0> tau;
+  for (m in 1:M) tau[m] = exp(log_tau[m]);
 }
 
 model {
   // Priors
   vector[M] log_theta = log(theta);
   target += normal_lpdf(mu | 0, mu_sd);
-  target += normal_lpdf(tau | 0,  tau_sd);
+  for (m in 1:M)
+    target += normal_lpdf(tau[m] | 0, tau_sd) + log_tau[m];
   target += dirichlet_lpdf(theta | rep_vector(1, M));
 
   // Model for observed data
@@ -69,7 +75,7 @@ generated quantities {
     sd_rep[i] = sqrt(v[study_idx]);
     
     // Generate effect size from the component, using sampled variance structure
-    y_rep[i] = normal_rng(mu[component], sqrt(v[study_idx]) + + square(tau[component]));
+    y_rep[i] = normal_rng(mu[component], sqrt(v[study_idx] + square(tau[component])));
     
   }
 }
