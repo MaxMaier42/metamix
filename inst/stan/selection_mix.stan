@@ -116,26 +116,31 @@ generated quantities {
   // Calculate average omega for each component
   // weighted by marginal likelihood of each study under that component
   // Calculate avg_omega[m] using inverse-omega weighting to undo selection
-  for (m in 1:M) {
-    real num = 0;
-    real den = 0;
+  if (K == 0) {
+    // No data: selection cannot be estimated, set to 1 (no correction)
+    for (m in 1:M) avg_omega[m] = 1.0;
+    theta_preselection = theta;
+  } else {
+    for (m in 1:M) {
+      real num = 0;
+      real den = 0;
 
-    for (i in 1:K) {
-      real r = posterior_probs[i, m];     // responsibility for component m
-      num += r;                          // = r * omega / omega
-      den += r / omega[I[i]];            // inverse selection weight
+      for (i in 1:K) {
+        real r = posterior_probs[i, m];     // responsibility for component m
+        num += r;                          // = r * omega / omega
+        den += r / omega[I[i]];            // inverse selection weight
+      }
+
+      avg_omega[m] = num / den;
     }
 
-    avg_omega[m] = num / den;
+    // Reweight theta to get pre-selection proportions
+    vector[M] theta_adjusted;
+    for (m in 1:M) {
+      theta_adjusted[m] = theta[m] / avg_omega[m];
+    }
+    theta_preselection = theta_adjusted / sum(theta_adjusted);  // Renormalize to simplex
   }
-
-  
-  // Reweight theta to get pre-selection proportions
-  vector[M] theta_adjusted;
-  for (m in 1:M) {
-    theta_adjusted[m] = theta[m] / avg_omega[m];
-  }
-  theta_preselection = theta_adjusted / sum(theta_adjusted);  // Renormalize to simplex
   
   
     int filled = 0;
