@@ -11,7 +11,7 @@
 #' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains).
 #' @return An object of class `stanfit` returned by `rstan::sampling`
 #'
-sel_mix <- function(y, sd, M, steps = c(0.9, 0.95), one_sided = TRUE, mu_sd = 1, tau_sd = 0.2, ...){
+sel_mix <- function(y, sd, M, steps = c(0.9, 0.95), one_sided = TRUE, mu_sd = 1, tau_sd = 0.2, prior_only = FALSE, ...){
   n_step <- length(steps)
   if(!(n_step == 1 | n_step == 2)){
     stop("Please specify one or two steps. The package does not currently support larger step numbers.")
@@ -23,6 +23,11 @@ sel_mix <- function(y, sd, M, steps = c(0.9, 0.95), one_sided = TRUE, mu_sd = 1,
 
   if(steps[1] <= .5 & !one_sided){
     stop("all cutoffs must be larger .5 for two-sided selection.")
+  }
+
+  if(prior_only){
+    y  <- numeric(0)
+    sd <- numeric(0)
   }
 
   ### assign steps
@@ -37,11 +42,11 @@ sel_mix <- function(y, sd, M, steps = c(0.9, 0.95), one_sided = TRUE, mu_sd = 1,
   standata <- list(K = length(y),
                    y = y,
                    v = sd^2,
-                   I = I,
+                   I = as.array(I),
                    M = M,
                    crit_v = as.array(qnorm(steps)),
                    n_step = n_step,
-                   one_sided = one_sided,
+                   one_sided = as.integer(one_sided),
                    mu_sd = mu_sd,
                    tau_sd = tau_sd)
   out <- rstan::sampling(stanmodels$selection_mix, data = standata, ...)

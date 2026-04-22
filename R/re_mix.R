@@ -9,9 +9,13 @@
 #' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains).
 #' @return An object of class `stanfit` returned by `rstan::sampling`
 #'
-re_mix <- function(y, sd, M, mu_sd = 1, tau_sd = 0.2, ...){
+re_mix <- function(y, sd, M, mu_sd = 1, tau_sd = 0.2, prior_only = FALSE, ...){
   if(mu_sd <= 0 | tau_sd <= 0){
     stop("mu_sd and tau_sd must be > 0.")
+  }
+  if(prior_only){
+    y  <- numeric(0)
+    sd <- numeric(0)
   }
   standata <- list(K = length(y),
                    y = y,
