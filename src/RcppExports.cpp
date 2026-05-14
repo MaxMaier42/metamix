@@ -13,10 +13,12 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 
 
 RcppExport SEXP _rcpp_module_boot_stan_fit4random_effects_mix_mod();
+RcppExport SEXP _rcpp_module_boot_stan_fit4selection_flexpb_mod();
 RcppExport SEXP _rcpp_module_boot_stan_fit4selection_mix_mod();
 
 static const R_CallMethodDef CallEntries[] = {
     {"_rcpp_module_boot_stan_fit4random_effects_mix_mod", (DL_FUNC) &_rcpp_module_boot_stan_fit4random_effects_mix_mod, 0},
+    {"_rcpp_module_boot_stan_fit4selection_flexpb_mod", (DL_FUNC) &_rcpp_module_boot_stan_fit4selection_flexpb_mod, 0},
     {"_rcpp_module_boot_stan_fit4selection_mix_mod", (DL_FUNC) &_rcpp_module_boot_stan_fit4selection_mix_mod, 0},
     {NULL, NULL, 0}
 };

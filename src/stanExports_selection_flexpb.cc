@@ -2,12 +2,12 @@
 
 #include <Rcpp.h>
 using namespace Rcpp ;
-#include "stanExports_random_effects_mix.h"
+#include "stanExports_selection_flexpb.h"
 
-RCPP_MODULE(stan_fit4random_effects_mix_mod) {
+RCPP_MODULE(stan_fit4selection_flexpb_mod) {
 
 
-    class_<rstan::stan_fit<stan_model, boost::random::ecuyer1988> >("rstantools_model_random_effects_mix")
+    class_<rstan::stan_fit<stan_model, boost::random::ecuyer1988> >("rstantools_model_selection_flexpb")
 
     .constructor<SEXP,SEXP,SEXP>()
 
