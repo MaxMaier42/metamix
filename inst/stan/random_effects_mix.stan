@@ -5,10 +5,13 @@ data {
   int<lower=0> M; //number of mixture components
   real<lower=0> mu_sd; //standard deviation of prior on mu
   real<lower=0> tau_sd; //standard deviation of prior on tau
+  real gap_meanlog; // log-scale location of repulsive lognormal prior on gaps between adjacent means
+  real<lower=0> gap_sdlog; // log-scale SD of repulsive lognormal prior on gaps between adjacent means
 }
 
 parameters {
-  ordered[M] mu; // overall mean effect size
+  real mu1; // smallest component mean
+  vector<lower=0>[M-1] mu_gap; // positive gaps between adjacent (ordered) means
   array[M] real log_tau; // log-scale heterogeneity (unconstrained)
   simplex[M] theta; //
 
@@ -16,13 +19,17 @@ parameters {
 
 transformed parameters {
   array[M] real<lower=0> tau;
+  vector[M] mu; // overall mean effect size (ordered via positive gaps)
+  mu[1] = mu1;
+  for (m in 2:M) mu[m] = mu[m-1] + mu_gap[m-1];
   for (m in 1:M) tau[m] = exp(log_tau[m]);
 }
 
 model {
   // Priors
   vector[M] log_theta = log(theta);
-  target += normal_lpdf(mu | 0, mu_sd);
+  target += normal_lpdf(mu1 | 0, mu_sd);
+  target += lognormal_lpdf(mu_gap | gap_meanlog, gap_sdlog);
   for (m in 1:M)
     target += normal_lpdf(tau[m] | 0, tau_sd) + log_tau[m];
   target += dirichlet_lpdf(theta | rep_vector(1, M));
