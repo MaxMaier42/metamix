@@ -11,10 +11,13 @@ data {
   int<lower=0, upper=1> one_sided;
   real<lower=0> mu_sd; //standard deviation of prior on mu
   real<lower=0> tau_sd; //standard deviation of prior on tau
+  real gap_meanlog; // log-scale location of repulsive lognormal prior on gaps between adjacent means
+  real<lower=0> gap_sdlog; // log-scale SD of repulsive lognormal prior on gaps between adjacent means
 }
 
 parameters {
-  ordered[M] mu; // overall mean effect size
+  real mu1; // smallest component mean
+  vector<lower=0>[M-1] mu_gap; // positive gaps between adjacent (ordered) means
   array[M] real log_tau; // log-scale heterogeneity (unconstrained)
   array[G] simplex[n_step+1] omega_raw; // one selection model per group
   simplex[M] theta; //
@@ -23,6 +26,9 @@ parameters {
 transformed parameters {
   array[G] vector[n_step + 1] omega;  // (bias-related) publication bias per group
   array[M] real<lower=0> tau;
+  vector[M] mu; // overall mean effect size (ordered via positive gaps)
+  mu[1] = mu1;
+  for (m in 2:M) mu[m] = mu[m-1] + mu_gap[m-1];
   for (g in 1:G) omega[g] = cumulative_sum(omega_raw[g]);
   for (m in 1:M) tau[m] = exp(log_tau[m]);
 }
@@ -30,7 +36,8 @@ transformed parameters {
 model {
   vector[M] log_theta = log(theta);
   // Priors
-  target += normal_lpdf(mu | 0, mu_sd);
+  target += normal_lpdf(mu1 | 0, mu_sd);
+  target += lognormal_lpdf(mu_gap | gap_meanlog, gap_sdlog);
   for (m in 1:M)
     target += normal_lpdf(tau[m] | 0, tau_sd) + log_tau[m];
   for (g in 1:G)
