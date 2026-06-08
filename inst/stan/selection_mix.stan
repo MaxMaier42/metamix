@@ -8,7 +8,8 @@ data {
   array[K] int<lower=1> I; // index for intervals based on p-value
   int<lower=0, upper=1> one_sided;
   real<lower=0> mu_sd; //standard deviation of prior on mu
-  real<lower=0> tau_sd; //standard deviation of prior on tau
+  real<lower=0> tau_alpha; // shape of inverse-gamma prior on tau (heterogeneity SD)
+  real<lower=0> tau_beta;  // scale of inverse-gamma prior on tau (heterogeneity SD)
   real gap_meanlog; // log-scale location of repulsive lognormal prior on gaps between adjacent means
   real<lower=0> gap_sdlog; // log-scale SD of repulsive lognormal prior on gaps between adjacent means
 }
@@ -16,19 +17,17 @@ data {
 parameters {
   real mu1; // smallest component mean
   vector<lower=0>[M-1] mu_gap; // positive gaps between adjacent (ordered) means
-  array[M] real log_tau; // log-scale heterogeneity (unconstrained)
+  vector<lower=0>[M] tau; // between-study heterogeneity SD per component
   simplex[n_step+1] omega_raw; //
   simplex[M] theta; //
 }
 
 transformed parameters {
   vector[n_step + 1] omega;  // (bias-related) publication bias
-  array[M] real<lower=0> tau;
   vector[M] mu; // overall mean effect size (ordered via positive gaps)
   mu[1] = mu1;
   for (m in 2:M) mu[m] = mu[m-1] + mu_gap[m-1];
   omega = cumulative_sum(omega_raw);
-  for (m in 1:M) tau[m] = exp(log_tau[m]);
 }
 
 model {
@@ -36,8 +35,10 @@ model {
   // Priors
   target += normal_lpdf(mu1 | 0, mu_sd);
   target += lognormal_lpdf(mu_gap | gap_meanlog, gap_sdlog);
-  for (m in 1:M)
-    target += normal_lpdf(tau[m] | 0, tau_sd) + log_tau[m];
+  // Inverse-gamma prior directly on tau; the lower=0 constraint supplies the log
+  // Jacobian automatically. target += (not ~) keeps the M-scaling normalizing
+  // constant needed for the cross-M bridge-sampling comparison.
+  target += inv_gamma_lpdf(tau | tau_alpha, tau_beta);
   target += dirichlet_lpdf(omega_raw | rep_vector(1, n_step+1));
   target += dirichlet_lpdf(theta | rep_vector(1, M));
 
@@ -99,6 +100,7 @@ model {
 }
 
 generated quantities {
+  vector[M] log_tau = log(tau);  // kept for funnel diagnostics (tau on log scale)
   matrix[K, M] posterior_probs;
   vector[K] y_rep;
   vector[K] sd_rep;          // within-study SD used for z and as "study SD"
