@@ -12,11 +12,12 @@ data {
   real<lower=0> tau_beta;  // scale of inverse-gamma prior on tau (heterogeneity SD)
   real gap_meanlog; // log-scale location of repulsive lognormal prior on gaps between adjacent means
   real<lower=0> gap_sdlog; // log-scale SD of repulsive lognormal prior on gaps between adjacent means
+  real<lower=0> gap_min; // hard lower floor on the gaps between adjacent means (0 = no floor)
 }
 
 parameters {
   real mu1; // smallest component mean
-  vector<lower=0>[M-1] mu_gap; // positive gaps between adjacent (ordered) means
+  vector<lower=gap_min>[M-1] mu_gap; // gaps between adjacent (ordered) means, floored at gap_min
   vector<lower=0>[M] tau; // between-study heterogeneity SD per component
   simplex[n_step+1] omega_raw; //
   simplex[M] theta; //
@@ -34,7 +35,12 @@ model {
   vector[M] log_theta = log(theta);
   // Priors
   target += normal_lpdf(mu1 | 0, mu_sd);
+  // Repulsive lognormal prior on the gaps, truncated to [gap_min, inf); the
+  // truncation correction (constant in the parameters) keeps the prior a proper
+  // normalized density for the cross-M bridge comparison.
   target += lognormal_lpdf(mu_gap | gap_meanlog, gap_sdlog);
+  if (gap_min > 0)
+    target += -(M - 1) * lognormal_lccdf(gap_min | gap_meanlog, gap_sdlog);
   // Inverse-gamma prior directly on tau; the lower=0 constraint supplies the log
   // Jacobian automatically. target += (not ~) keeps the M-scaling normalizing
   // constant needed for the cross-M bridge-sampling comparison.

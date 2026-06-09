@@ -24,13 +24,18 @@
 #'   mass on separations smaller than Cohen's d = 0.1.
 #' @param gap_sdlog log-scale standard deviation of the repulsive lognormal prior
 #'   on the gaps between adjacent means. Defaults to `0.4`.
+#' @param gap_min hard lower floor on the gaps between adjacent (ordered)
+#'   component means: every gap is constrained to be at least `gap_min`, and the
+#'   lognormal gap prior is truncated to `[gap_min, Inf)`. Use this to forbid
+#'   near-degenerate configurations where two means sit almost on top of each
+#'   other. Defaults to `0` (no floor; identical to the previous behaviour).
 #' @param prior_only if TRUE, sample from the prior only (no data)
 #' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains).
 #' @return An object of class `stanfit` returned by `rstan::sampling`
 #'
 sel_flexpb <- function(y, sd, grp, M, steps = c(0.9, 0.95), one_sided = TRUE,
                        mu_sd = 1, tau_alpha = 2.5, tau_beta = 0.15, gap_meanlog = log(0.1),
-                       gap_sdlog = 0.4, prior_only = FALSE, ...) {
+                       gap_sdlog = 0.4, gap_min = 0, prior_only = FALSE, ...) {
   n_step <- length(steps)
   if(!(n_step == 1 | n_step == 2)){
     stop("Please specify one or two steps. The package does not currently support larger step numbers.")
@@ -46,6 +51,10 @@ sel_flexpb <- function(y, sd, grp, M, steps = c(0.9, 0.95), one_sided = TRUE,
 
   if(gap_sdlog <= 0){
     stop("gap_sdlog must be > 0.")
+  }
+
+  if(gap_min < 0){
+    stop("gap_min must be >= 0.")
   }
 
   if(steps[1] <= .5 & !one_sided){
@@ -91,7 +100,8 @@ sel_flexpb <- function(y, sd, grp, M, steps = c(0.9, 0.95), one_sided = TRUE,
                    tau_alpha = tau_alpha,
                    tau_beta = tau_beta,
                    gap_meanlog = gap_meanlog,
-                   gap_sdlog = gap_sdlog)
+                   gap_sdlog = gap_sdlog,
+                   gap_min = gap_min)
 
   out <- rstan::sampling(stanmodels$selection_flexpb, data = standata, ...)
   return(out)
