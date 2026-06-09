@@ -8,10 +8,18 @@ sel_mix(
   y,
   sd,
   M,
-  steps = c(0.5, 0.95),
+  steps = c(0.9, 0.95),
   one_sided = TRUE,
   mu_sd = 1,
   tau_sd = 0.2,
+  mean_prior = c("normal", "gap"),
+  tau_prior = c("half_normal", "inv_gamma"),
+  gap_meanlog = log(0.1),
+  gap_sdlog = 0.4,
+  gap_min = 0,
+  tau_alpha = 2.5,
+  tau_beta = 0.15,
+  prior_only = FALSE,
   ...
 )
 }
@@ -26,9 +34,42 @@ sel_mix(
 
 \item{one_sided}{whether selection is one or two-sided}
 
-\item{mu_sd}{standard deviation of prior on mean}
+\item{mu_sd}{standard deviation of the normal prior on the component means
+(used by both mean-prior settings: as the prior on every ordered mean when
+\code{mean_prior = "normal"}, and as the prior on the first mean when
+\code{mean_prior = "gap"}). Defaults to \code{1}.}
 
-\item{tau_sd}{standard deviation of prior on heterogeneity}
+\item{tau_sd}{standard deviation of the half-normal prior on the heterogeneity
+SD \code{tau} (used when \code{tau_prior = "half_normal"}). Defaults to \code{0.2}.}
+
+\item{mean_prior}{prior family for the component means. \code{"normal"} (default)
+places an independent normal(0, \code{mu_sd}) prior on each ordered mean -- the
+classic specification. \code{"gap"} uses the repulsive setup: normal on the first
+mean plus a lognormal prior on the positive gaps between adjacent means
+(controlled by \code{gap_meanlog}, \code{gap_sdlog}, \code{gap_min}).}
+
+\item{tau_prior}{prior family for the heterogeneity SD \code{tau}. \code{"half_normal"}
+(default) uses a half-normal(0, \code{tau_sd}) prior -- the classic specification.
+\code{"inv_gamma"} places an inverse-gamma(\code{tau_alpha}, \code{tau_beta}) prior directly
+on \code{tau}, suppressing near-degenerate (spike) components.}
+
+\item{gap_meanlog}{log-scale location of the repulsive lognormal gap prior
+(only used when \code{mean_prior = "gap"}). Defaults to \code{log(0.1)}.}
+
+\item{gap_sdlog}{log-scale standard deviation of the repulsive lognormal gap
+prior (only used when \code{mean_prior = "gap"}). Defaults to \code{0.4}.}
+
+\item{gap_min}{hard lower floor on the gaps between adjacent means: each gap is
+constrained to be at least \code{gap_min} and the lognormal gap prior is truncated
+to \verb{[gap_min, Inf)} (only used when \code{mean_prior = "gap"}). Defaults to \code{0}.}
+
+\item{tau_alpha}{shape of the inverse-gamma prior on \code{tau} (only used when
+\code{tau_prior = "inv_gamma"}). Defaults to \code{2.5}.}
+
+\item{tau_beta}{scale of the inverse-gamma prior on \code{tau} (only used when
+\code{tau_prior = "inv_gamma"}). Defaults to \code{0.15}.}
+
+\item{prior_only}{if TRUE, sample from the prior only (no data).}
 
 \item{...}{Arguments passed to \code{rstan::sampling} (e.g. iter, chains).}
 }
