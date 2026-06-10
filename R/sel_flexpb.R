@@ -33,6 +33,12 @@
 #'   `tau_prior = "inv_gamma"`). Defaults to `2.5`.
 #' @param tau_beta scale of the inverse-gamma prior on `tau` (only used when
 #'   `tau_prior = "inv_gamma"`). Defaults to `0.15`.
+#' @param unselected integer vector of group indices assumed NOT subject to
+#'   publication bias: their selection weights `omega` are fixed to 1, so the
+#'   likelihood for their studies reduces to the no-selection model, and the
+#'   selection model is estimated only for the remaining groups (e.g.
+#'   `unselected = 1` if group 1 is an unselected registry sample). Defaults to
+#'   `NULL` (selection estimated for every group).
 #' @param prior_only if TRUE, sample from the prior only (no data)
 #' @param ... Arguments passed to `rstan::sampling` (e.g. iter, chains).
 #' @return An object of class `stanfit` returned by `rstan::sampling`
@@ -43,6 +49,7 @@ sel_flexpb <- function(y, sd, grp, M, steps = c(0.9, 0.95), one_sided = TRUE,
                        tau_prior = c("half_normal", "inv_gamma"),
                        gap_meanlog = log(0.1), gap_sdlog = 0.4, gap_min = 0,
                        tau_alpha = 2.5, tau_beta = 0.15,
+                       unselected = NULL,
                        prior_only = FALSE, ...) {
   mean_prior <- match.arg(mean_prior)
   tau_prior  <- match.arg(tau_prior)
@@ -81,6 +88,18 @@ sel_flexpb <- function(y, sd, grp, M, steps = c(0.9, 0.95), one_sided = TRUE,
 
   G <- max(grp)
 
+  sel_free <- rep(1L, G)
+  if(!is.null(unselected)){
+    unselected <- as.integer(unselected)
+    if(any(unselected < 1 | unselected > G)){
+      stop("unselected must contain group indices between 1 and G.")
+    }
+    sel_free[unselected] <- 0L
+    if(all(sel_free == 0L)){
+      stop("All groups are marked unselected; use re_mix() for a model without publication bias.")
+    }
+  }
+
   if(prior_only){
     y   <- numeric(0)
     sd  <- numeric(0)
@@ -117,7 +136,8 @@ sel_flexpb <- function(y, sd, grp, M, steps = c(0.9, 0.95), one_sided = TRUE,
                    tau_beta = tau_beta,
                    gap_meanlog = gap_meanlog,
                    gap_sdlog = gap_sdlog,
-                   gap_min = gap_min)
+                   gap_min = gap_min,
+                   sel_free = as.array(sel_free))
 
   out <- rstan::sampling(stanmodels$selection_flexpb, data = standata, ...)
   return(out)

@@ -18,6 +18,7 @@ data {
   real gap_meanlog; // log-scale location of repulsive lognormal gap prior (used when use_gap_prior = 1)
   real<lower=0> gap_sdlog; // log-scale SD of repulsive lognormal gap prior (used when use_gap_prior = 1)
   real<lower=0> gap_min; // hard lower floor on the gaps between adjacent means (0 = no floor)
+  array[G] int<lower=0, upper=1> sel_free; // 1 = selection model estimated for this group; 0 = no publication bias (omega fixed to 1)
 }
 
 parameters {
@@ -33,7 +34,15 @@ transformed parameters {
   vector[M] mu; // overall mean effect size (ordered via positive gaps)
   mu[1] = mu1;
   for (m in 2:M) mu[m] = mu[m-1] + mu_gap[m-1];
-  for (g in 1:G) omega[g] = cumulative_sum(omega_raw[g]);
+  // Groups with sel_free = 0 are assumed unselected: omega fixed to 1 (the
+  // likelihood then reduces exactly to the no-selection likelihood for them);
+  // their omega_raw stays in the model with its Dirichlet prior only.
+  for (g in 1:G) {
+    if (sel_free[g] == 1)
+      omega[g] = cumulative_sum(omega_raw[g]);
+    else
+      omega[g] = rep_vector(1.0, n_step + 1);
+  }
 }
 
 model {

@@ -20,6 +20,7 @@ sel_flexpb(
   gap_min = 0,
   tau_alpha = 2.5,
   tau_beta = 0.15,
+  unselected = NULL,
   prior_only = FALSE,
   ...
 )
@@ -71,6 +72,13 @@ to \verb{[gap_min, Inf)} (only used when \code{mean_prior = "gap"}). Defaults to
 
 \item{tau_beta}{scale of the inverse-gamma prior on \code{tau} (only used when
 \code{tau_prior = "inv_gamma"}). Defaults to \code{0.15}.}
+
+\item{unselected}{integer vector of group indices assumed NOT subject to
+publication bias: their selection weights \code{omega} are fixed to 1, so the
+likelihood for their studies reduces to the no-selection model, and the
+selection model is estimated only for the remaining groups (e.g.
+\code{unselected = 1} if group 1 is an unselected registry sample). Defaults to
+\code{NULL} (selection estimated for every group).}
 
 \item{prior_only}{if TRUE, sample from the prior only (no data)}
 
