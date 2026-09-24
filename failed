@@ -1,0 +1,8 @@
+            id                     name conclusion
+1 107623934657    ubuntu-latest (devel)    failure
+2 107623934773 windows-latest (release)    success
+3 107623934923  ubuntu-latest (release)    failure
+4 107623934980   macos-latest (release)    failure
+ubuntu-latest (devel) - step: Run r-lib/actions/check-r-package@v2 
+ubuntu-latest (release) - step: Run r-lib/actions/check-r-package@v2 
+macos-latest (release) - step: Run r-lib/actions/check-r-package@v2 
