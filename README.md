@@ -44,16 +44,7 @@ print(fit, pars = c("mu", "tau", "theta", "omega"))
 * `sel_mix()`: random-effects mixture model with a step-function selection model.
 * `sim_mix()`: simulate data from the mixtures.
 
-## References
+## Reference
 
 Maier, M. (2026). Addressing heterogeneity with Bayesian meta-analytic
 mixture modelling. *PsyArXiv*. https://doi.org/10.31234/osf.io/nkyqm_v2
-
-Maier, M., Bartoš, F., & Wagenmakers, E.-J. (2023). Robust Bayesian
-meta-analysis: Addressing publication bias with model-averaging.
-*Psychological Methods*, 28(1), 107–122. https://doi.org/10.1037/met0000405
-
-Mertens, S., Herberz, M., Hahnel, U. J. J., & Brosch, T. (2022). The
-effectiveness of nudging: A meta-analysis of choice architecture
-interventions across behavioral domains. *Proceedings of the National Academy
-of Sciences*, 119(1), e2107346118. https://doi.org/10.1073/pnas.2107346118
