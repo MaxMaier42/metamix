@@ -1,0 +1,156 @@
+---
+title: "Comparison between metamixr and RoBMA"
+author: "Maximilian Maier"
+output:
+  rmarkdown::html_vignette:
+    md_extensions: -implicit_figures
+vignette: >
+  %\VignetteIndexEntry{Comparison between metamixr and RoBMA}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "figures/compareRoBMA-",
+  fig.width = 7,
+  fig.height = 4
+)
+```
+
+This vignette validates the random-effects meta-analysis and selection model
+implementation in metamixr against RoBMA. RoBMA priors are set to the metamixr defaults
+(normal(0, 1) on the mean and half-normal(0, 0.2) on the heterogeneity) so
+that the two packages estimate the same model. Also see Maier (2026) for a more in-depth
+simulation study validating the mixture models. Reproducing this vignette requires RoBMA (version
+4.0.0 or later) and JAGS in addition to package dependencies.
+
+```{r packages, message = FALSE, warning = FALSE}
+library(metamixr)
+library(rstan)
+library(RoBMA)
+```
+
+## Random-effects meta-analysis
+
+We simulate 300 studies with a true mean effect of 0 and heterogeneity 0.2.
+We can use the function `sim_mix()` from the package to specify a normal
+random-effects meta-analysis by setting `M = 1` and `weights = c(1, 1, 1)`
+(all studies equally likely to be published).
+
+```{r simulate}
+set.seed(42)
+dat <- sim_mix(K = 300, M = 1, mu = 0, tau = 0.2, steps = c(0.95, 0.975),
+               weights = c(1, 1, 1), one_sided = TRUE)
+```
+
+The random-effects model in metamixr can be fitted using `re_mix()` with a single component; in
+RoBMA it can be fitted using `brma()`.
+
+```{r re-fit}
+fit_metamix <- re_mix(dat$y, dat$sds, M = 1, chains = 4, cores = 4, seed = 1, refresh = 0)
+
+fit_RoBMA <- brma(yi = dat$y, sei = dat$sds, measure = "GEN",
+                  prior_effect = prior("normal", list(0, 1)),
+                  prior_heterogeneity = prior("normal", list(0, 0.2), list(0, Inf)),
+                  chains = 4, sample = 1000, burnin = 1000, parallel = TRUE, seed = 1)
+```
+
+Both implementations recover the data-generating values and agree closely.
+
+```{r re-summary}
+print(fit_metamix, pars = c("mu", "tau"))
+summary(fit_RoBMA)
+```
+
+## One-sided selection
+
+Next we simulate publication bias using `sim_mix()`. Studies that are not significant in the
+expected direction (one-sided p > .05) are published with probability 0.2, marginally significant studies
+(.025 < p < .05) with probability 0.5, and significant studies with
+probability 1.
+
+```{r simulate-pb}
+set.seed(123)
+dat_pb <- sim_mix(K = 300, M = 1, mu = 0, tau = 0.2, steps = c(0.95, 0.975),
+                  weights = c(0.2, 0.5, 1), one_sided = TRUE)
+```
+
+Let's plot the distribution of z-statistics to visually inspect the simulated publication bias.
+
+```{r z-hist}
+z <- dat_pb$y / dat_pb$sds
+hist(z, breaks = 60, main = "", xlab = "z-statistic")
+abline(v = qnorm(c(0.95, 0.975)), lty = 2)
+```
+
+The two packages state the same cutoffs differently. metamixr takes cumulative
+probabilities of the standard normal distribution, `steps = c(0.95, 0.975)`,
+so that `qnorm(steps)` are the cutoffs on the z-statistic. RoBMA takes the
+one-sided p-values, `steps = c(0.025, 0.05)`. To validate the metamixr implementation
+we restrict RoBMA to fit only a single selection model corresponding to
+the implementation of the selection model in metamixr.
+
+```{r pb-fit}
+fit_metamix_pb <- sel_mix(dat_pb$y, dat_pb$sds, M = 1, steps = c(0.95, 0.975),
+                          chains = 4, cores = 4, seed = 1, refresh = 0)
+
+fit_RoBMA_pb <- bselmodel(yi = dat_pb$y, sei = dat_pb$sds, measure = "GEN",
+                          prior_effect = prior("normal", list(0, 1)),
+                          prior_heterogeneity = prior("normal", list(0, 0.2), list(0, Inf)),
+                          prior_bias = prior_weightfunction(side = "one-sided",
+                                                            steps = c(0.025, 0.05)),
+                          effect_direction = "positive",
+                          chains = 4, sample = 1000, burnin = 1000, parallel = TRUE, seed = 1)
+```
+
+Again the estimates agree between the two approaches to fitting the same selection model.
+
+```{r pb-summary}
+print(fit_metamix_pb, pars = c("mu", "tau", "omega"))
+summary(fit_RoBMA_pb)
+```
+
+## Two-sided selection
+
+We next compare the two methods for two-sided selection, where significance in either
+direction increases the probability of publication. In metamixr this is
+`one_sided = FALSE`; in RoBMA it is `side = "two-sided"` in the weight
+function prior.
+
+```{r two-sided}
+set.seed(123)
+dat_pb2 <- sim_mix(K = 300, M = 1, mu = 0, tau = 0.2, steps = c(0.95, 0.975),
+                   weights = c(0.2, 0.5, 1), one_sided = FALSE)
+
+fit_metamix_pb2 <- sel_mix(dat_pb2$y, dat_pb2$sds, M = 1, steps = c(0.95, 0.975),
+                           one_sided = FALSE, chains = 4, cores = 4, seed = 1, refresh = 0)
+
+fit_RoBMA_pb2 <- bselmodel(yi = dat_pb2$y, sei = dat_pb2$sds, measure = "GEN",
+                           prior_effect = prior("normal", list(0, 1)),
+                           prior_heterogeneity = prior("normal", list(0, 0.2), list(0, Inf)),
+                           prior_bias = prior_weightfunction(side = "two-sided",
+                                                             steps = c(0.025, 0.05)),
+                           chains = 4, sample = 1000, burnin = 1000, parallel = TRUE, seed = 1)
+```
+
+```{r two-sided-summary}
+print(fit_metamix_pb2, pars = c("mu", "tau", "omega"))
+summary(fit_RoBMA_pb2)
+```
+
+## References
+
+Bartoš, F., Maier, M., Wagenmakers, E.-J., Doucouliagos, H., & Stanley, T. D.
+(2023). Robust Bayesian meta-analysis: Model-averaging across complementary
+publication bias adjustment methods. *Research Synthesis Methods*, 14(1),
+99--116. https://doi.org/10.1002/jrsm.1594
+
+Maier, M. (2026). Addressing heterogeneity with Bayesian meta-analytic
+mixture modelling. *PsyArXiv*. https://doi.org/10.31234/osf.io/nkyqm_v2
+
+Maier, M., Bartoš, F., & Wagenmakers, E.-J. (2023). Robust Bayesian
+meta-analysis: Addressing publication bias with model-averaging.
+*Psychological Methods*, 28(1), 107--122. https://doi.org/10.1037/met0000405

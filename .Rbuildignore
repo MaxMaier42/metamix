@@ -1,3 +1,15 @@
 ^metamix\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
+^.*\.Rhistory$
+^\.gitattributes$
+^\.github$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^README\.Rmd$
+^cran-comments\.md$
+^CRAN-SUBMISSION$
+^data-raw$
+^vignettes/.*\.Rmd\.orig$
+^vignettes/precompute\.R$

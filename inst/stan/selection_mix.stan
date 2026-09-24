@@ -7,30 +7,55 @@ data {
   array[n_step] real crit_v;
   array[K] int<lower=1> I; // index for intervals based on p-value
   int<lower=0, upper=1> one_sided;
+  int<lower=0, upper=1> use_gap_prior; // 0 = independent normal on each (ordered) mean; 1 = repulsive gap prior
+  int<lower=0, upper=1> use_inv_gamma_tau; // 0 = half-normal prior on tau; 1 = inverse-gamma prior on tau
   real<lower=0> mu_sd; //standard deviation of prior on mu
-  real<lower=0> tau_sd; //standard deviation of prior on tau
+  real<lower=0> tau_sd; // SD of half-normal prior on tau (used when use_inv_gamma_tau = 0)
+  real<lower=0> tau_alpha; // shape of inverse-gamma prior on tau (used when use_inv_gamma_tau = 1)
+  real<lower=0> tau_beta;  // scale of inverse-gamma prior on tau (used when use_inv_gamma_tau = 1)
+  real gap_meanlog; // log-scale location of repulsive lognormal gap prior (used when use_gap_prior = 1)
+  real<lower=0> gap_sdlog; // log-scale SD of repulsive lognormal gap prior (used when use_gap_prior = 1)
+  real<lower=0> gap_min; // hard lower floor on the gaps between adjacent means (0 = no floor)
 }
 
 parameters {
-  ordered[M] mu; // overall mean effect size
-  array[M] real log_tau; // log-scale heterogeneity (unconstrained)
+  real mu1; // smallest component mean
+  vector<lower=gap_min>[M-1] mu_gap; // gaps between adjacent (ordered) means, floored at gap_min
+  vector<lower=0>[M] tau; // between-study heterogeneity SD per component
   simplex[n_step+1] omega_raw; //
   simplex[M] theta; //
 }
 
 transformed parameters {
   vector[n_step + 1] omega;  // (bias-related) publication bias
-  array[M] real<lower=0> tau;
+  vector[M] mu; // overall mean effect size (ordered via positive gaps)
+  mu[1] = mu1;
+  for (m in 2:M) mu[m] = mu[m-1] + mu_gap[m-1];
   omega = cumulative_sum(omega_raw);
-  for (m in 1:M) tau[m] = exp(log_tau[m]);
 }
 
 model {
   vector[M] log_theta = log(theta);
   // Priors
-  target += normal_lpdf(mu | 0, mu_sd);
-  for (m in 1:M)
-    target += normal_lpdf(tau[m] | 0, tau_sd) + log_tau[m];
+
+  // --- prior on the component means ---
+  if (use_gap_prior == 1) {
+    target += normal_lpdf(mu1 | 0, mu_sd);
+    target += lognormal_lpdf(mu_gap | gap_meanlog, gap_sdlog);
+    if (gap_min > 0)
+      target += -(M - 1) * lognormal_lccdf(gap_min | gap_meanlog, gap_sdlog);
+  } else {
+    // independent normal on each (ordered) mean; reproduces ordered[M] mu ~ normal
+    target += normal_lpdf(mu | 0, mu_sd);
+  }
+
+  // --- prior on the heterogeneity SD tau ---
+  if (use_inv_gamma_tau == 1) {
+    target += inv_gamma_lpdf(tau | tau_alpha, tau_beta);
+  } else {
+    target += normal_lpdf(tau | 0, tau_sd); // half-normal (tau constrained > 0)
+  }
+
   target += dirichlet_lpdf(omega_raw | rep_vector(1, n_step+1));
   target += dirichlet_lpdf(theta | rep_vector(1, M));
 
@@ -92,6 +117,7 @@ model {
 }
 
 generated quantities {
+  vector[M] log_tau = log(tau);  // kept for funnel diagnostics (tau on log scale)
   matrix[K, M] posterior_probs;
   vector[K] y_rep;
   vector[K] sd_rep;          // within-study SD used for z and as "study SD"

@@ -1,131 +1,260 @@
 ---
-title: "Vignette Title"
-author: "Vignette Author"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+title: "Comparison between metamixr and RoBMA"
+author: "Maximilian Maier"
+output:
+  rmarkdown::html_vignette:
+    md_extensions: -implicit_figures
 vignette: >
-  %\VignetteIndexEntry{Comparing Metamix Selection Model Implementation Against RoBMA}
+  %\VignetteIndexEntry{Comparison between metamixr and RoBMA}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
-```
 
-This vignette compares inferneces from the metamix package to robust Bayesian meta-analysis. Metamix does not currently directly implement Bayesian model-averaging (though model-averaging could be easily done using the resulting rstan objects and averaging their posterior distributions weighted by their posterior model probabilities). Instead, we compare selected models implemented in RoBMA to metamix. For a single component model the priors and likelihood function between metamix and RoBMA are the same with the exception that metamix uses a different prior on tau (by default normal(0, 0.2) because a narrower prior on tau is more desirable for mixture modelling) an dthat metamix is implemented in stan, whereas RoBMA is implemented in R. Overall, this vignette should therefore be considered as an illustrative sanity check on the selection model implementation of metamix. I also conducted a large simulation study to test the performance of the models and other sanity checks, which more directly cover mixture models are implemented in the test functions of the package.  
 
-## Random Effects Meta-Analysis 
+This vignette validates the random effects meta analysis and selection model
+implementation in metamixr against RoBMA. RoBMA priors are set to the metamixr defaults
+(normal(0, 1) on the mean and half-normal(0, 0.2) on the heterogeneity) so
+that the two packages estimate the same model. Also see Maier (2026) for a more in depth
+simulation study validating the mixture models. Reproducing this vignette requires RoBMA (version
+4.0.0 or later) and JAGS in addition to package dependencies.
 
-Let us simulate some data for a random effects meta-analysis with 100 observations using the sim_mix function from the metamix package. 
 
-The code below simulates 300 studies for a meta-analysis with $mu - 0$ and heterogeneity $tau = 0.2$, because all the relative publication probabilities are set to 1, this assumes no publication bias. The primary study sample sizes are sampled from a negative binomial distribution with N_low = 25, N_high = 500, N_shape = 2, N_scale = 58 based on empirical sample sizes for primary studies in meta-analyses (for detail see Maier et al., 2023). The function then returns a dataframe with effect sizes and standard errors.
-
-```{r}
-library(metamix)
+``` r
+library(metamixr)
 library(rstan)
-set.seed(42)
-dat <- sim_mix(K = 300, M = 1, mu = 0, tau = 0.2, steps = c(0.5, 0.95), weights = c(1,1,1), one_sided = T)
-```
-
-We can now go ahead and fit the random effects meta-analysis based on metamix and based on RoBMA. 
-
-```{r}
-fit_metamix <- re_mix(dat$y, dat$sds, M = 1, chains = 4, cores = 4)
-```
-
-```{r}
 library(RoBMA)
-fit_RoBMA <- RoBMA::RoBMA(d = dat$y, v = dat$sds^2,
-               priors_effect_null        = NULL,
-               priors_heterogeneity_null = NULL,
-               priors_bias               = NULL,
-               parallel = TRUE, seed = 1)
 ```
 
-As expected both of the methods recover the data generating process well and lead to extremely similar inferences.
+## Random-effects meta-analysis
 
-```{r}
+We simulate 300 studies with a true mean effect of 0 and heterogeneity 0.2.
+We can use the function \texttt{sim_mix} from the package to specify a normal
+random effects meta-analysis by setting M = 1 and weights = c(1,1,1)
+(all studies equally likely to be published).
+
+
+``` r
+set.seed(42)
+dat <- sim_mix(K = 300, M = 1, mu = 0, tau = 0.2, steps = c(0.95, 0.975),
+               weights = c(1, 1, 1), one_sided = TRUE)
+```
+
+The random-effects model in metamixr can be fit using `re_mix()` with a single component; in
+RoBMA it can be fitted using `brma()`.
+
+
+``` r
+fit_metamix <- re_mix(dat$y, dat$sds, M = 1, chains = 4, cores = 4, seed = 1, refresh = 0)
+
+fit_RoBMA <- brma(yi = dat$y, sei = dat$sds, measure = "GEN",
+                  prior_effect = prior("normal", list(0, 1)),
+                  prior_heterogeneity = prior("normal", list(0, 0.2), list(0, Inf)),
+                  chains = 4, sample = 1000, burnin = 1000, parallel = TRUE, seed = 1)
+#> Compiling rjags model...
+#> Starting 4 rjags simulations using a PSOCK cluster with 4 nodes on host
+#> 'localhost'
+#> Simulation complete
+#> Finished running the simulation
+```
+
+Both implementations recover the data-generating values and agree closely.
+
+
+``` r
+print(fit_metamix, pars = c("mu", "tau"))
+#> Inference for Stan model: random_effects_mix.
+#> 4 chains, each with iter=2000; warmup=1000; thin=1; 
+#> post-warmup draws per chain=1000, total post-warmup draws=4000.
+#> 
+#>         mean se_mean   sd  2.5%   25%   50%   75% 97.5% n_eff Rhat
+#> mu[1]  -0.04       0 0.01 -0.07 -0.05 -0.04 -0.03 -0.01  3397    1
+#> tau[1]  0.18       0 0.02  0.15  0.17  0.18  0.19  0.21  3318    1
+#> 
+#> Samples were drawn using NUTS(diag_e) at Tue Sep 22 12:35:32 2026.
+#> For each parameter, n_eff is a crude measure of effective sample size,
+#> and Rhat is the potential scale reduction factor on split chains (at 
+#> convergence, Rhat=1).
 summary(fit_RoBMA)
-rstan::summary(fit_metamix, pars = c("mu", "tau"))$summary[ , c("mean", "2.5%", "97.5%")]
-
+#> 
+#> Bayesian Random-Effects Model (k = 300)
+#> 
+#> Estimates
+#>       Mean    SD  0.025    0.5  0.975 error(MCMC) error(MCMC)/SD  ESS R-hat
+#> mu  -0.039 0.016 -0.071 -0.039 -0.008     0.00025          0.016 4000 1.000
+#> tau  0.180 0.016  0.149  0.180  0.211     0.00031          0.020 2471 1.001
 ```
 
-## One Sided Selection
+## One-sided selection
 
-Next let us consider one-sided selection. We can introduce publication bias by modifying \texttt{sim_mix} by adjusting the relative publication probabilities. Let us assume nonsignificant studies are 20\% as likely to be published as studies that are significant one a two-sided test (p < .025 on one-sided $p$-values), and studies that are significant on a one-sided test but not on a two sided test (i.e., 0.025 < p < .05) are half as likely to be published compared to studies that are significant on a two-sided test. We can adjust the publication probabilities in the sim_mix function to generate this data. 
+Next we simulate publication bias using sim_mix. Studies that are not significant in the
+expected direction (p > .05 in one-sided test) are published with probability 0.2, marginally significant studies
+(.025 < p < .05) with probability 0.5, and significant studies with
+probability 1.
 
-```{r}
+
+``` r
 set.seed(123)
-dat_pb <- sim_mix(K = 300, M = 1, mu = 0, tau = 0.2, steps = c(0.95, 0.975), weights = c(0.2,0.5,1), one_sided = T)
+dat_pb <- sim_mix(K = 300, M = 1, mu = 0, tau = 0.2, steps = c(0.95, 0.975),
+                  weights = c(0.2, 0.5, 1), one_sided = TRUE)
 ```
 
-When we visualize the data we can see a cutoff at the $z$-values corresponding to $p = .05$ and $p = .025$. 
+Let's plot the distribution of z statistics to visually inspect the simulated publciation bias.
 
-```{r}
-z = dat_pb$y/dat_pb$sds
-hist(z, breaks = 100)
-abline(v = qnorm(0.95), col = "red", lty = 3)
-abline(v = qnorm(0.975), col = "red", lty = 3)
+
+``` r
+z <- dat_pb$y / dat_pb$sds
+hist(z, breaks = 60, main = "", xlab = "z-statistic")
+abline(v = qnorm(c(0.95, 0.975)), lty = 2)
 ```
 
-Let us know adjust for this publication bias using metamix and RoBMA. Note the slightly different direction. Whereas RoBMA assumes that effect sizes are coined in the direct direction, metamix can accomodate selection on positive effect sizes (used here with cutoffs c(0.95, 0.975)) and negative effect sizes, which would be c(0.05, 0.025).
+![plot of chunk z-hist](figures/compareRoBMA-z-hist-1.png)
 
-```{r}
-start_time <- Sys.time()
-fit_RoBMA_pb <- RoBMA(d = dat_pb$y, v = dat_pb$sds^2,
-                 priors_bias = list(prior_weightfunction(distribution = "one.sided",
-                                                         parameters = list(alpha = c(1, 1, 1),
-                                                                           steps = c(0.025, 0.05)),
-                                                         prior_weights = 1)),
-                 priors_effect_null = NULL,
-                 priors_heterogeneity_null = NULL,
-                 priors_bias_null = NULL, 
-                 parallel = TRUE)
-RoBMA_time <- Sys.time() - start_time
+The two packages state the same cutoffs differently. metamixr takes cumulative
+probabilities of the standard normal distribution, `steps = c(0.95, 0.975)`,
+so that `qnorm(steps)` are the cutoffs on the z-statistic. RoBMA takes the
+one-sided p-values, `steps = c(0.025, 0.05)`. To validate the metamixr implementation
+we restrict RoBMA to fit only a single selection model corresponding to
+the implementation of the selection model in metamixr.
+
+
+``` r
+fit_metamix_pb <- sel_mix(dat_pb$y, dat_pb$sds, M = 1, steps = c(0.95, 0.975),
+                          chains = 4, cores = 4, seed = 1, refresh = 0)
+
+fit_RoBMA_pb <- bselmodel(yi = dat_pb$y, sei = dat_pb$sds, measure = "GEN",
+                          prior_effect = prior("normal", list(0, 1)),
+                          prior_heterogeneity = prior("normal", list(0, 0.2), list(0, Inf)),
+                          prior_bias = prior_weightfunction(side = "one-sided",
+                                                            steps = c(0.025, 0.05)),
+                          effect_direction = "positive",
+                          chains = 4, sample = 1000, burnin = 1000, parallel = TRUE, seed = 1)
+#> Compiling rjags model...
+#> Starting 4 rjags simulations using a PSOCK cluster with 4 nodes on host
+#> 'localhost'
+#> Simulation complete
+#> Finished running the simulation
 ```
 
-```{r}
-start_time <- Sys.time()
-fit_metamix_pb <- sel_mix(dat_pb$y, dat_pb$sds, M = 1, steps = c(0.95, 0.975), chains = 4, cores = 4)
-metamix_time <- Sys.time() - start_time
-```
+Again the estimates agree between the two approaches to fitting the same selection model.
 
 
-Again both of the methods recover the data generating process well and lead to extremely similar inferences.
-
-```{r}
+``` r
+print(fit_metamix_pb, pars = c("mu", "tau", "omega"))
+#> Inference for Stan model: selection_mix.
+#> 4 chains, each with iter=2000; warmup=1000; thin=1; 
+#> post-warmup draws per chain=1000, total post-warmup draws=4000.
+#> 
+#>          mean se_mean   sd  2.5%  25%  50%  75% 97.5% n_eff Rhat
+#> mu[1]    0.02       0 0.02 -0.03 0.00 0.02 0.03  0.06  2302    1
+#> tau[1]   0.20       0 0.02  0.17 0.19 0.20 0.21  0.23  2174    1
+#> omega[1] 0.29       0 0.07  0.18 0.24 0.29 0.34  0.46  2095    1
+#> omega[2] 0.57       0 0.15  0.32 0.45 0.55 0.67  0.90  2040    1
+#> omega[3] 1.00       0 0.00  1.00 1.00 1.00 1.00  1.00   134    1
+#> 
+#> Samples were drawn using NUTS(diag_e) at Tue Sep 22 12:38:42 2026.
+#> For each parameter, n_eff is a crude measure of effective sample size,
+#> and Rhat is the potential scale reduction factor on split chains (at 
+#> convergence, Rhat=1).
 summary(fit_RoBMA_pb)
-rstan::summary(fit_metamix_pb, pars = c("mu", "tau", "omega"))$summary[ , c("mean", "2.5%", "97.5%")]
+#> 
+#> Bayesian Random-Effects Selection Model (k = 300)
+#> 
+#> Estimates
+#>      Mean    SD  0.025   0.5 0.975 error(MCMC) error(MCMC)/SD  ESS R-hat
+#> mu  0.017 0.024 -0.030 0.017 0.063     0.00096          0.040  729 1.013
+#> tau 0.202 0.016  0.171 0.202 0.235     0.00046          0.029 1230 1.003
+#> 
+#> Publication Bias
+#>                    Mean    SD 0.025   0.5 0.975 error(MCMC) error(MCMC)/SD ESS
+#> omega[0,0.025]    1.000 0.000 1.000 1.000 1.000          NA             NA  NA
+#> omega[0.025,0.05] 0.568 0.147 0.322 0.552 0.891     0.00578          0.039 644
+#> omega[0.05,1]     0.293 0.073 0.174 0.284 0.463     0.00313          0.043 599
+#>                   R-hat
+#> omega[0,0.025]       NA
+#> omega[0.025,0.05] 1.010
+#> omega[0.05,1]     1.011
+#> P-value intervals for publication bias weights omega correspond to one-sided p-values.
 ```
 
-However, due to the implementation in stan rather than jags metamix evaluates the models considerably faster. RoBMA took `r round(as.numeric(RoBMA_time, units = "secs"), 2)` seconds, whereas metamix took `r round(as.numeric(metamix_time, units = "secs"), 2)` seconds, around three times faster. 
+## Two-sided selection
 
-## Two Sided Selection
+We next compare the two methods for two sided selection, where significance in either
+direction increases the probability of publication. In metamixr this is
+`one_sided = FALSE`; in RoBMA it is `side = "two-sided"` in the weight
+function prior.
 
-We can analogously compare two sided selection. Which again leads to similar results for the two methods. 
 
-```{r}
+``` r
 set.seed(123)
-dat_pb2 <- sim_mix(K = 300, M = 1, mu = 0, tau = 0.2, steps = c(0.95, 0.975), weights = c(0.2,0.5,1), one_sided = FALSE)
+dat_pb2 <- sim_mix(K = 300, M = 1, mu = 0, tau = 0.2, steps = c(0.95, 0.975),
+                   weights = c(0.2, 0.5, 1), one_sided = FALSE)
 
-fit_RoBMA_pb2 <- RoBMA(d = dat_pb2$y, v = dat_pb2$sds^2,
-                 priors_bias = list(prior_weightfunction(distribution = "two.sided",
-                                                         parameters = list(alpha = c(1, 1, 1),
-                                                                           steps = c(0.025, 0.05)),
-                                                         prior_weights = 1)),
-                 priors_effect_null = NULL,
-                 priors_heterogeneity_null = NULL,
-                 priors_bias_null = NULL, 
-                 parallel = TRUE)
+fit_metamix_pb2 <- sel_mix(dat_pb2$y, dat_pb2$sds, M = 1, steps = c(0.95, 0.975),
+                           one_sided = FALSE, chains = 4, cores = 4, seed = 1, refresh = 0)
 
-fit_metamix_pb2 <- sel_mix(dat_pb2$y, dat_pb2$sds, M = 1, steps = c(0.95, 0.975), one_sided = FALSE, chains = 4, cores = 4)
+fit_RoBMA_pb2 <- bselmodel(yi = dat_pb2$y, sei = dat_pb2$sds, measure = "GEN",
+                           prior_effect = prior("normal", list(0, 1)),
+                           prior_heterogeneity = prior("normal", list(0, 0.2), list(0, Inf)),
+                           prior_bias = prior_weightfunction(side = "two-sided",
+                                                             steps = c(0.025, 0.05)),
+                           chains = 4, sample = 1000, burnin = 1000, parallel = TRUE, seed = 1)
+#> Compiling rjags model...
+#> Starting 4 rjags simulations using a PSOCK cluster with 4 nodes on host
+#> 'localhost'
+#> Simulation complete
+#> Finished running the simulation
 ```
 
-```{r}
+
+``` r
+print(fit_metamix_pb2, pars = c("mu", "tau", "omega"))
+#> Inference for Stan model: selection_mix.
+#> 4 chains, each with iter=2000; warmup=1000; thin=1; 
+#> post-warmup draws per chain=1000, total post-warmup draws=4000.
+#> 
+#>          mean se_mean   sd  2.5%   25%  50%  75% 97.5% n_eff Rhat
+#> mu[1]    0.00       0 0.01 -0.03 -0.01 0.00 0.00  0.02  2464    1
+#> tau[1]   0.23       0 0.02  0.20  0.22 0.23 0.24  0.26  2930    1
+#> omega[1] 0.31       0 0.06  0.22  0.27 0.31 0.35  0.43  3086    1
+#> omega[2] 0.50       0 0.11  0.31  0.42 0.49 0.57  0.75  2093    1
+#> omega[3] 1.00       0 0.00  1.00  1.00 1.00 1.00  1.00   256    1
+#> 
+#> Samples were drawn using NUTS(diag_e) at Tue Sep 22 12:44:07 2026.
+#> For each parameter, n_eff is a crude measure of effective sample size,
+#> and Rhat is the potential scale reduction factor on split chains (at 
+#> convergence, Rhat=1).
 summary(fit_RoBMA_pb2)
-rstan::summary(fit_metamix_pb2, pars = c("mu", "tau", "omega"))$summary[ , c("mean", "2.5%", "97.5%")]
+#> 
+#> Bayesian Random-Effects Selection Model (k = 300)
+#> 
+#> Estimates
+#>       Mean    SD  0.025    0.5 0.975 error(MCMC) error(MCMC)/SD  ESS R-hat
+#> mu  -0.004 0.014 -0.031 -0.004 0.023     0.00029          0.021 2245 1.002
+#> tau  0.227 0.018  0.193  0.226 0.262     0.00060          0.034  874 1.001
+#> 
+#> Publication Bias
+#>                    Mean    SD 0.025   0.5 0.975 error(MCMC) error(MCMC)/SD  ESS
+#> omega[0,0.025]    1.000 0.000 1.000 1.000 1.000          NA             NA   NA
+#> omega[0.025,0.05] 0.871 0.095 0.651 0.891 0.995     0.00296          0.031 1022
+#> omega[0.05,1]     0.315 0.057 0.217 0.310 0.440     0.00185          0.033  944
+#>                   R-hat
+#> omega[0,0.025]       NA
+#> omega[0.025,0.05] 1.008
+#> omega[0.05,1]     1.002
+#> P-value intervals for publication bias weights omega correspond to one-sided p-values.
 ```
+
+## References
+
+Bartoš, F., Maier, M., Wagenmakers, E.-J., Doucouliagos, H., & Stanley, T. D.
+(2023). Robust Bayesian meta-analysis: Model-averaging across complementary
+publication bias adjustment methods. *Research Synthesis Methods*, 14(1),
+99--116. https://doi.org/10.1002/jrsm.1594
+
+Maier, M. (2026). Addressing heterogeneity with Bayesian meta-analytic
+mixture modelling. *PsyArXiv*. https://doi.org/10.31234/osf.io/nkyqm_v2
+
+Maier, M., Bartoš, F., & Wagenmakers, E.-J. (2023). Robust Bayesian
+meta-analysis: Addressing publication bias with model-averaging.
+*Psychological Methods*, 28(1), 107--122. https://doi.org/10.1037/met0000405

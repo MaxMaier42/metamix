@@ -2,26 +2,146 @@
 % Please edit documentation in R/re_mix.R
 \name{re_mix}
 \alias{re_mix}
-\title{Random Effects Meta-Analytic Mixtures}
+\title{Random-Effects Meta-Analytic Mixture Model}
 \usage{
-re_mix(y, sd, M, mu_sd = 1, tau_sd = 0.2, ...)
+re_mix(
+  y,
+  sd,
+  M,
+  mu_sd = 1,
+  tau_sd = 0.2,
+  mean_prior = c("normal", "gap"),
+  tau_prior = c("half_normal", "inv_gamma"),
+  gap_meanlog = log(0.2),
+  gap_sdlog = 0.3,
+  gap_min = 0,
+  tau_alpha = 2.5,
+  tau_beta = 0.15,
+  prior_only = FALSE,
+  ...
+)
 }
 \arguments{
-\item{y}{vector of primary study effects}
+\item{y}{numeric vector of observed effect sizes.}
 
-\item{sd}{standard deviation of primary study effects}
+\item{sd}{numeric vector of the standard errors of \code{y} (same length as \code{y}).}
 
-\item{M}{number of mixture components}
+\item{M}{number of mixture components (a positive integer).}
 
-\item{mu_sd}{standard deviation of prior on mean}
+\item{mu_sd}{standard deviation of the normal prior on the component means
+(used by both mean-prior settings: as the prior on every ordered mean when
+\code{mean_prior = "normal"}, and as the prior on the first mean when
+\code{mean_prior = "gap"}). Defaults to \code{1}.}
 
-\item{tau_sd}{standard deviation of prior on heterogeneity}
+\item{tau_sd}{standard deviation of the half-normal prior on the heterogeneity
+SD \code{tau} (used when \code{tau_prior = "half_normal"}). Defaults to \code{0.2}.}
 
-\item{...}{Arguments passed to \code{rstan::sampling} (e.g. iter, chains).}
+\item{mean_prior}{prior family for the component means. \code{"normal"} (default)
+places an independent normal(0, \code{mu_sd}) prior on each ordered mean.
+\code{"gap"} uses a lognormal prior on the positive gaps between adjacent means
+(controlled by \code{gap_meanlog}, \code{gap_sdlog}, \code{gap_min}), which discourages two
+components collapsing onto the same location.}
+
+\item{tau_prior}{prior family for the heterogeneity SD \code{tau}. \code{"half_normal"}
+(default) uses a half-normal(0, \code{tau_sd}) prior.
+\code{"inv_gamma"} places an inverse-gamma(\code{tau_alpha}, \code{tau_beta}) prior directly
+on \code{tau}.}
+
+\item{gap_meanlog}{log-scale location of the repulsive lognormal gap prior
+(only used when \code{mean_prior = "gap"}). Defaults to \code{log(0.2)}.}
+
+\item{gap_sdlog}{log-scale standard deviation of the repulsive lognormal gap
+prior (only used when \code{mean_prior = "gap"}). Defaults to \code{0.3}.}
+
+\item{gap_min}{hard lower floor on the gaps between adjacent means: each gap is
+constrained to be at least \code{gap_min} and the lognormal gap prior is truncated
+to \verb{[gap_min, Inf)} (only used when \code{mean_prior = "gap"}). Defaults to \code{0}.}
+
+\item{tau_alpha}{shape of the inverse-gamma prior on \code{tau} (only used when
+\code{tau_prior = "inv_gamma"}). Defaults to \code{2.5}.}
+
+\item{tau_beta}{scale of the inverse-gamma prior on \code{tau} (only used when
+\code{tau_prior = "inv_gamma"}). Defaults to \code{0.15}.}
+
+\item{prior_only}{if \code{TRUE}, the data are ignored and the prior distribution
+is sampled instead (useful for prior predictive checks).}
+
+\item{...}{further arguments passed to \code{\link[rstan:stanmodel-method-sampling]{rstan::sampling()}}, e.g. \code{chains},
+\code{iter}, \code{cores}, \code{seed}, \code{refresh} or \code{control}.}
 }
 \value{
-An object of class \code{stanfit} returned by \code{rstan::sampling}
+An object of class \code{\link[rstan:stanfit-class]{stanfit}} as returned by
+\code{\link[rstan:stanmodel-method-sampling]{rstan::sampling()}}. It contains posterior draws of
+\describe{
+\item{\code{mu}}{vector of length \code{M}: the ordered component means.}
+\item{\code{tau}}{vector of length \code{M}: the between-study standard deviation of
+each component.}
+\item{\code{theta}}{vector of length \code{M}: the mixing weights.}
+\item{\code{mu1}, \code{mu_gap}}{the underlying parameterisation of the means (the
+first mean and the \code{M - 1} gaps between adjacent means).}
+\item{\code{log_tau}}{\code{log(tau)}, convenient for funnel diagnostics.}
+\item{\code{posterior_probs}}{\code{K} by \code{M} matrix: the posterior probability that
+study \code{i} belongs to component \code{m}.}
+\item{\code{y_rep}, \code{sd_rep}}{posterior predictive draws of \code{K} effect sizes and
+the standard errors they were generated with. For each draw a component
+is sampled from \code{theta}, a study is sampled with probability
+proportional to its responsibility for that component, and a new effect
+size is generated using that study's standard error.}
+}
+Use e.g. \code{print(fit, pars = c("mu", "tau", "theta"))}, \code{summary(fit)} or
+\code{\link[rstan:stanfit-method-extract]{rstan::extract()}} to access them.
 }
 \description{
-Random Effects Meta-Analytic Mixtures
+Fits a Bayesian random-effects meta-analysis in which the true study effects
+arise from a mixture of \code{M} normal components, each with its own mean and
+between-study heterogeneity (Maier, 2026). With \code{M = 1} the model is the
+ordinary random-effects meta-analysis. No publication bias adjustment is
+applied; see \code{\link[=sel_mix]{sel_mix()}} and \code{\link[=sel_flexpb]{sel_flexpb()}} for the corresponding selection
+models.
 }
+\details{
+See Maier (2026) for details of the model and the priors.
+}
+\examples{
+\donttest{
+# Simulate 40 studies from a two-component mixture without publication bias
+set.seed(1)
+dat <- sim_mix(K = 40, M = 2, mu = c(0, 0.6), tau = c(0.1, 0.1),
+               steps = c(0.95, 0.975), weights = c(1, 1, 1), one_sided = TRUE)
+
+# A single short chain keeps the example fast; use e.g. chains = 4 and
+# iter = 2000 (the rstan defaults) for a real analysis.
+fit <- re_mix(dat$y, dat$sds, M = 2, chains = 1, iter = 500, refresh = 0)
+print(fit, pars = c("mu", "tau", "theta"))
+
+# Posterior probability that each study belongs to the second component
+resp <- rstan::extract(fit, pars = "posterior_probs")$posterior_probs
+head(colMeans(resp)[, 2])
+
+# Sample from the prior only (no data enter the model)
+prior <- re_mix(dat$y, dat$sds, M = 2, prior_only = TRUE,
+                chains = 1, iter = 500, refresh = 0)
+print(prior, pars = c("mu", "tau"))
+}
+}
+\references{
+Maier, M. (2026). Addressing heterogeneity with Bayesian meta-analytic
+mixture modelling. \emph{PsyArXiv}. \doi{10.31234/osf.io/nkyqm_v2}
+
+Maier, M., Bartoš, F., & Wagenmakers, E.-J. (2023). Robust Bayesian
+meta-analysis: Addressing publication bias with model-averaging.
+\emph{Psychological Methods}, 28(1), 107--122. \doi{10.1037/met0000405}
+
+Stan Development Team (2024). RStan: the R interface to Stan.
+\url{https://mc-stan.org/}
+}
+\seealso{
+\code{\link[=sel_mix]{sel_mix()}} and \code{\link[=sel_flexpb]{sel_flexpb()}} for the same mixture model combined
+with step-function selection models; \code{\link[=sim_mix]{sim_mix()}} to simulate data from
+the model.
+
+Other model fitting functions: 
+\code{\link{sel_flexpb}()},
+\code{\link{sel_mix}()}
+}
+\concept{model fitting functions}

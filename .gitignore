@@ -1,2 +1,9 @@
 .Rproj.user
+.Rhistory
 inst/doc
+/doc/
+/Meta/
+src/*.o
+src/*.so
+src/*.dll
+docs/

@@ -1,0 +1,184 @@
+---
+title: "Application to Nudging (Mertens et al., 2022)"
+author: "Maximilian Maier"
+output:
+  rmarkdown::html_vignette:
+    md_extensions: -implicit_figures
+vignette: >
+  %\VignetteIndexEntry{Application to Nudging (Mertens et al., 2022)}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "figures/nudging-",
+  fig.width = 7,
+  fig.height = 4
+)
+```
+
+This vignette applies metamixr to a meta-analysis of choice-architecture ("nudge") interventions collected by Mertens et al. (2022), which are included in the package as `mertens_nudge`.
+
+```{r packages, message = FALSE}
+library(metamixr)
+library(rstan)
+library(bridgesampling)
+```
+
+## Data
+
+The data set contains 447 effect sizes (Cohen's d) with their sampling
+variances. Before fitting we remove effect sizes of 1.5 or larger in absolute
+value, and the studies by Wansink, who had a large number of papers retracted due to evidence of research misconduct. This leaves 414 effect sizes.
+
+```{r data}
+data("mertens_nudge")
+nudge <- subset(mertens_nudge, abs(cohens_d) < 1.5)
+nudge <- nudge[!grepl("^Wansink", nudge$reference), ]
+nrow(nudge)
+
+y  <- nudge$cohens_d
+sd <- sqrt(nudge$variance_d)
+hist(y, breaks = 100, main = "", xlab = "Cohen's d")
+```
+
+The distribution of the z-statistics suggests publication bias as test statistics
+pile up just above the significance threshold.
+
+```{r z-hist}
+z <- y / sd
+hist(z[z > -5 & z < 10], breaks = seq(-5, 10, by = 0.25), main = "", xlab = "z-statistic")
+abline(v = c(0, qnorm(0.975)), lty = 2)
+```
+
+## Model specification
+
+The selection model uses `steps = c(0.5, 0.975)`. This implies that significant p-values
+on two-sided tests are more likely to be published than non-significant p-values and
+among the non-significant p-values effects in the expected direction are more likely to be published than backfire effects.
+
+We fit this selection model with one to four mixture components, and the
+corresponding models without selection (`re_mix()`) for comparison.
+
+```{r fit, warning = FALSE}
+M_max <- 4
+fits_sel <- vector("list", M_max)
+fits_re  <- vector("list", M_max)
+for (m in 1:M_max) {
+  fits_sel[[m]] <- sel_mix(y, sd, M = m, steps = c(0.5, 0.975),
+                           chains = 4, cores = 4, iter = 20000, warmup = 10000,
+                           seed = 1, refresh = 0)
+  fits_re[[m]]  <- re_mix(y, sd, M = m,
+                          chains = 4, cores = 4, iter = 20000, warmup = 10000,
+                          seed = 1, refresh = 0)
+}
+```
+
+## Convergence
+
+Mixture models can have multimodal posteriors, in which case chains started
+from different values settle in different modes and the usual convergence
+diagnostics flag the fit. Before comparing models we therefore check, for
+every fit, the largest R-hat of the model parameters and the number of
+divergent transitions.
+
+```{r convergence}
+check_fit <- function(fit) {
+  pars <- intersect(c("mu", "tau", "theta", "omega"), fit@model_pars)
+  s <- rstan::summary(fit, pars = pars)$summary
+  s <- s[is.finite(s[, "Rhat"]), , drop = FALSE]
+  div <- sum(sapply(rstan::get_sampler_params(fit, inc_warmup = FALSE),
+                    function(x) sum(x[, "divergent__"])))
+  c(max_rhat = round(max(s[, "Rhat"]), 3), divergences = div)
+}
+conv <- rbind(t(sapply(fits_sel, check_fit)), t(sapply(fits_re, check_fit)))
+rownames(conv) <- c(paste0("sel_mix M=", 1:M_max), paste0("re_mix M=", 1:M_max))
+conv
+```
+
+The two-component selection model has not converged: an R-hat of almost 10 and
+many divergent transitions likely imply that the four chains ended in
+different modes of the posterior, so its parameter summaries and its marginal
+likelihood below cannot be trusted. The multimodality vignette (`vignette("multimodality")`) shows how
+to diagnose such multimodality by initialising chains in the different modes and comparing the marginal likelihoods across them.
+All other models converged (R-hat at most 1.02), although the four-component models still show some divergent
+transitions.
+
+## Model comparison
+
+To estimate the posterior probability of each model given the data, we can use bridgesampling to estimate each model's marginal likelihood.
+
+```{r bridge}
+fits <- c(fits_sel, fits_re)
+names(fits) <- rownames(conv)
+logml <- sapply(fits, function(f) bridge_sampler(f, silent = TRUE)$logml)
+post_prob <- exp(logml - max(logml)) / sum(exp(logml - max(logml)))
+round(cbind(logml = logml, post_prob = post_prob), 3)
+```
+
+Every model without selection is decisively rejected, and among the
+selection models the data favour three or four components, with the evidence
+split almost evenly between the two.
+
+## Inspecting the selected model
+
+```{r selected}
+best <- fits[[which.max(post_prob)]]
+print(best, pars = c("mu", "tau", "theta", "theta_preselection", "omega"))
+```
+
+The estimated selection weights show that results in the unexpected direction and non-significant results
+are far less likely to be published than significant ones. The components
+can be visualised as the weighted normal densities of the true effects.
+
+```{r components}
+est <- rstan::summary(best, pars = c("mu", "tau", "theta"))$summary[, "mean"]
+M   <- best@par_dims$mu
+x   <- seq(-0.5, 1.5, length.out = 500)
+dens <- sapply(1:M, function(m) {
+  est[paste0("theta[", m, "]")] * dnorm(x, est[paste0("mu[", m, "]")], est[paste0("tau[", m, "]")])
+})
+matplot(x, dens, type = "l", lty = 2, lwd = 2, col = 1:M,
+        xlab = "True effect size", ylab = "Density")
+legend("topright", legend = paste("Component", 1:M), col = 1:M, lty = 2, lwd = 2, bty = "n")
+```
+
+## Which studies belong to which component?
+
+`posterior_probs` gives, for every effect size, the posterior probability of
+belonging to each component. To get a quick sense of the differences between
+clusters we can inspect the study characteristics of effect sizes in different clusters.
+
+```{r clusters}
+probs <- rstan::extract(best, pars = "posterior_probs")$posterior_probs
+p_mean <- apply(probs, c(2, 3), mean)          # effect sizes x components
+nudge$component <- ifelse(apply(p_mean, 1, max) > 0.5,
+                          paste("Component", apply(p_mean, 1, which.max)),
+                          "Unclassified")
+table(nudge$component)
+```
+
+```{r cluster-plot, fig.height = 7, fig.width = 8}
+par(mfrow = c(2, 1), mar = c(4, 7, 3, 12))
+for (v in c("intervention_category", "domain")) {
+  tab <- prop.table(table(nudge$component, nudge[[v]]), 1)
+  barplot(t(tab), horiz = TRUE, las = 1, main = v, xlab = "Proportion",
+          col = gray.colors(ncol(tab)), legend.text = TRUE,
+          args.legend = list(x = "right", inset = c(-0.4, 0), bty = "n", xpd = TRUE))
+}
+par(mfrow = c(1, 1))
+```
+
+## References
+
+Maier, M. (2026). Addressing heterogeneity with Bayesian meta-analytic
+mixture modelling. *PsyArXiv*. https://doi.org/10.31234/osf.io/nkyqm_v2
+
+Mertens, S., Herberz, M., Hahnel, U. J. J., & Brosch, T. (2022). The
+effectiveness of nudging: A meta-analysis of choice architecture
+interventions across behavioral domains. *Proceedings of the National
+Academy of Sciences*, 119(1), e2107346118.
+https://doi.org/10.1073/pnas.2107346118

@@ -1,33 +1,50 @@
-Package: metamix
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+Package: metamixr
+Title: 'MetaMix': Bayesian Meta-Analytic Mixture Models
+Version: 0.1.0
+Authors@R: c(
+    person("Maximilian", "Maier", email = "maximilianmaier0401@gmail.com",
+           role = c("aut", "cre"), comment = c(ORCID = "0000-0002-9873-6096")),
+    person("Trustees of", "Columbia University", role = "cph"))
+Description: Fits Bayesian random-effects meta-analytic mixture models in which
+    the true study effects are drawn from a mixture of normal components with
+    component-specific means and between-study heterogeneity. The mixture model
+    can be combined with step-function selection models (Vevea and Hedges, 1995,
+    <doi:10.1007/BF02294384>) to adjust for publication bias, either with one
+    selection model for all studies or with separate selection models for
+    groups of studies. Models are estimated by Hamiltonian Monte Carlo using
+    'rstan' and returned as 'stanfit' objects, so posterior summaries,
+    posterior predictive checks and marginal likelihoods for model comparison
+    (via 'bridgesampling') are readily available. Also includes a data
+    simulator and the nudging meta-analysis data of Mertens et al. (2022)
+    <doi:10.1073/pnas.2107346118>.
 License: MIT + file LICENSE
+URL: https://github.com/MaxMaier42/metamix
+BugReports: https://github.com/MaxMaier42/metamix/issues
 Encoding: UTF-8
+Language: en-GB
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Biarch: true
-Depends: 
+Depends:
     R (>= 3.5)
-Imports: 
+Imports:
     methods,
     Rcpp (>= 0.12.0),
     RcppParallel (>= 5.0.1),
-    rstan (>= 2.18.1),
-    rstantools (>= 2.4.0)
-LinkingTo: 
+    rstan (>= 2.26.0),
+    rstantools (>= 2.4.0),
+    stats
+LinkingTo:
     BH (>= 1.66.0),
     Rcpp (>= 0.12.0),
     RcppEigen (>= 0.3.3.3.0),
     RcppParallel (>= 5.0.1),
-    rstan (>= 2.18.1),
-    StanHeaders (>= 2.18.0)
+    rstan (>= 2.26.0),
+    StanHeaders (>= 2.26.0)
 SystemRequirements: GNU make
-Suggests: 
+Suggests:
     testthat (>= 3.0.0),
-    bridgesamling,
+    bridgesampling,
     knitr,
     rmarkdown
 Config/testthat/edition: 3

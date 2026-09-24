@@ -1,4 +1,5 @@
 test_that("sel_mix recovers mu and tau, and weights (1 component, one-sided)", {
+  skip_if_not_slow()
   mus <- c(0)
   taus <- c(0.2)
   weights <- c(0.2, 0.5, 1)
@@ -26,6 +27,7 @@ test_that("sel_mix recovers mu and tau, and weights (1 component, one-sided)", {
 
 
 test_that("sel_mix recovers mu and tau, and weights (1 component, two-sided)", {
+  skip_if_not_slow()
   mus <- c(0)
   taus <- c(0.2)
   weights <- c(0.2, 0.5, 1)
@@ -53,6 +55,7 @@ test_that("sel_mix recovers mu and tau, and weights (1 component, two-sided)", {
 
 
 test_that("sel_mix recovers mu and tau, and weights (3 component, one-sided)", {
+  skip_if_not_slow()
   mus <- c(0, 1, 2)
   taus <- c(0.1, 0.2, 0.3)
   weights <- c(0.2, 0.5, 1)
