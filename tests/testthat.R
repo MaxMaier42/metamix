@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(metamix)
+library(metamixr)
 
-test_check("metamix")
+test_check("metamixr")

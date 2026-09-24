@@ -1,4 +1,5 @@
 test_that("re_mix recovers mu and tau (1 component)", {
+  skip_if_not_slow()
   mus <- c(0)
   taus <- c(0.1)
 
@@ -11,14 +12,15 @@ test_that("re_mix recovers mu and tau (1 component)", {
 
   # Check that each true mu is inside the corresponding credible interval
   expect_true(mus[1] >= post_cis[1, 1] && mus[1] <= post_cis[1, 2],
-                info = paste0("mu[", i, "] not in 99.8% CI"))
+              info = "mu not in 99.8% CI")
 
   # Check that each true tau is inside the corresponding credible interval
-    expect_true(taus[1] >= post_cis[2, 1] && taus[1] <= post_cis[2, 2],
-                info = paste0("tau[", i, "] not in 99.8% CI"))
+  expect_true(taus[1] >= post_cis[2, 1] && taus[1] <= post_cis[2, 2],
+              info = "tau not in 99.8% CI")
 })
 
 test_that("re_mix recovers mu and tau (2 components)", {
+  skip_if_not_slow()
   mus <- c(0, 1)
   taus <- c(0.1, 0.2)
 
@@ -43,6 +45,7 @@ test_that("re_mix recovers mu and tau (2 components)", {
 })
 
 test_that("re_mix recovers mu and tau (3 components)", {
+          skip_if_not_slow()
           mus <- c(0, 1, 2)
           taus <- c(0.1, 0.2, 0.3)
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/sim_mix.R
 \name{sim_mix}
 \alias{sim_mix}
-\title{Simulate Data from Random Effects Meta-Analytic Mixtures with Selection Models}
+\title{Simulate Meta-Analytic Data from a Mixture Model with Publication Bias}
 \usage{
 sim_mix(
   K,
@@ -20,33 +20,76 @@ sim_mix(
 )
 }
 \arguments{
-\item{K}{number of studies}
+\item{K}{number of (published) studies to return.}
 
-\item{M}{number of mixture components}
+\item{M}{number of mixture components.}
 
-\item{mu}{vector of mixture means}
+\item{mu}{numeric vector of length \code{M}: the mean true effect of each component.}
 
-\item{tau}{vector of heterogeneity in each mixture component}
+\item{tau}{numeric vector of length \code{M}: the between-study standard deviation
+of the true effects within each component.}
 
-\item{steps}{p-value cutoffs (one-sided p-values). Currently only supports one or two steps.}
+\item{steps}{cutoffs of the p-value intervals, in the same format as in
+\code{\link[=sel_mix]{sel_mix()}} (cumulative probabilities of the standard normal distribution;
+e.g. \code{c(0.95, 0.975)} for one-sided p-values of .05 and .025, i.e.
+two-sided .10 and .05 in the expected direction). Strictly increasing
+values in (0, 1).}
 
-\item{weights}{relative publication probabilities}
+\item{weights}{publication probabilities of the p-value intervals, a vector
+of length \code{length(steps) + 1} with values in \verb{[0, 1]}. The first element
+applies to the least significant interval, e.g. \code{c(0.2, 0.5, 1)}.}
 
-\item{one_sided}{whether selection is one or two-sided}
+\item{one_sided}{if \code{TRUE} selection depends on the one-sided p-value
+(z-statistic \code{y/sd}), if \code{FALSE} on the two-sided p-value (\code{abs(y/sd)}).}
 
-\item{thetas}{mixing weights, defaults to equal weight for each component}
+\item{thetas}{mixing weights of the components; defaults to equal weights.}
 
-\item{N_low}{lower bound on primary study sample sizes}
+\item{N_low}{lower bound on the total sample size of a primary study.}
 
-\item{N_high}{upper bound on primary study sample sizes}
+\item{N_high}{upper bound on the total sample size of a primary study.}
 
-\item{N_shape}{shape of negative binomial distribution to generate sample sizes (see Maier et al., 2023)}
+\item{N_shape}{shape (\code{size}) of the negative binomial distribution used to
+generate sample sizes (see Maier et al., 2023).}
 
-\item{N_scale}{scale of negative binomial distribution to generate sample sizes (see Maier et al., 2023)}
+\item{N_scale}{scale of the negative binomial distribution used to generate
+sample sizes; the success probability is \code{1 / (N_scale + 1)} (see Maier
+et al., 2023).}
 }
 \value{
-A data frame with effect sizes and standard errors
+A data frame with \code{K} rows and the columns \code{y} (observed effect
+size) and \code{sds} (its standard error), ready to be passed to \code{\link[=re_mix]{re_mix()}},
+\code{\link[=sel_mix]{sel_mix()}} or \code{\link[=sel_flexpb]{sel_flexpb()}}.
 }
 \description{
-Simulate Data from Random Effects Meta-Analytic Mixtures with Selection Models
+Simulates \code{K} published studies from the random-effects mixture model of
+\code{\link[=re_mix]{re_mix()}} combined with the step-function selection model of \code{\link[=sel_mix]{sel_mix()}}.
+Studies are generated until \code{K} of them have passed the selection step, so
+the returned data set has exactly \code{K} rows.
+}
+\details{
+See Maier (2026) for details of the model and the simulation design.
+}
+\examples{
+set.seed(1)
+# Two components (null effect and medium effect) without publication bias
+dat <- sim_mix(K = 100, M = 2, mu = c(0, 0.5), tau = c(0.05, 0.1),
+               steps = c(0.95, 0.975), weights = c(1, 1, 1), one_sided = TRUE)
+head(dat)
+
+# Strong one-sided selection: studies that are not significant in the
+# expected direction are published with probability .1 only
+dat_pb <- sim_mix(K = 100, M = 1, mu = 0, tau = 0.1, steps = c(0.95, 0.975),
+                  weights = c(0.1, 0.5, 1), one_sided = TRUE)
+mean(dat_pb$y / dat_pb$sds > qnorm(0.975))
+}
+\references{
+Maier, M. (2026). Addressing heterogeneity with Bayesian meta-analytic
+mixture modelling. \emph{PsyArXiv}. \doi{10.31234/osf.io/nkyqm_v2}
+
+Maier, M., Bartoš, F., & Wagenmakers, E.-J. (2023). Robust Bayesian
+meta-analysis: Addressing publication bias with model-averaging.
+\emph{Psychological Methods}, 28(1), 107--122. \doi{10.1037/met0000405}
+}
+\seealso{
+\code{\link[=re_mix]{re_mix()}}, \code{\link[=sel_mix]{sel_mix()}}, \code{\link[=sel_flexpb]{sel_flexpb()}}
 }

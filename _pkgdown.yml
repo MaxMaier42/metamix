@@ -1,0 +1,47 @@
+url: https://maxmaier42.github.io/metamix/
+
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left: [reference, articles, news]
+    right: [search, github, lightswitch]
+  components:
+    articles:
+      text: Vignettes
+      menu:
+      - text: Getting started
+        href: articles/metamix.html
+      - text: Application to Nudging (Mertens et al., 2022)
+        href: articles/nudging.html
+      - text: Addressing multimodal posteriors
+        href: articles/multimodality.html
+      - text: Comparison between metamixr and RoBMA
+        href: articles/compareRoBMA.html
+
+reference:
+- title: Model fitting
+  desc: Bayesian meta-analytic mixture models, with and without selection models for publication bias.
+  contents:
+  - re_mix
+  - sel_mix
+  - sel_flexpb
+- title: Simulation
+  contents:
+  - sim_mix
+- title: Data
+  contents:
+  - mertens_nudge
+- title: Package
+  contents:
+  - metamixr-package
+
+articles:
+- title: Vignettes
+  navbar: ~
+  contents:
+  - metamix
+  - nudging
+  - multimodality
+  - compareRoBMA
