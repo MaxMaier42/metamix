@@ -261,7 +261,7 @@ print(fit, pars = c("mu", "tau", "omega"))
 #> omega[2] 0.62    0.02 0.20 0.25 0.48 0.61 0.78  0.97   175 1.00
 #> omega[3] 1.00    0.00 0.00 1.00 1.00 1.00 1.00  1.00   169 0.99
 #> 
-#> Samples were drawn using NUTS(diag_e) at Thu Sep 24 13:47:55 2026.
+#> Samples were drawn using NUTS(diag_e) at Fri Oct  9 16:28:54 2026.
 #> For each parameter, n_eff is a crude measure of effective sample size,
 #> and Rhat is the potential scale reduction factor on split chains (at 
 #> convergence, Rhat=1).
