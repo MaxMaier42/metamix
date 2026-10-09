@@ -1,4 +1,4 @@
-# metamixr: 'MetaMix': Bayesian Meta-Analytic Mixture Models
+# metamixr: Bayesian Meta-Analytic Mixture Modelling
 
 Fits Bayesian random-effects meta-analytic mixture models in which the
 true study effects are drawn from a mixture of normal components with
@@ -62,6 +62,8 @@ Stan Development Team (2024). RStan: the R interface to Stan.
 Useful links:
 
 - <https://github.com/MaxMaier42/metamix>
+
+- <https://maxmaier42.github.io/metamix/>
 
 - Report bugs at <https://github.com/MaxMaier42/metamix/issues>
 

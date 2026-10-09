@@ -27,4 +27,4 @@ for publication bias.
 
 - [`metamixr-package`](https://maxmaier42.github.io/metamix/reference/metamixr-package.md)
   [`metamixr`](https://maxmaier42.github.io/metamix/reference/metamixr-package.md)
-  : metamixr: 'MetaMix': Bayesian Meta-Analytic Mixture Models
+  : metamixr: Bayesian Meta-Analytic Mixture Modelling
