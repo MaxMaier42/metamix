@@ -4,7 +4,7 @@
 \name{metamixr-package}
 \alias{metamixr-package}
 \alias{metamixr}
-\title{metamixr: 'MetaMix': Bayesian Meta-Analytic Mixture Models}
+\title{metamixr: Bayesian Meta-Analytic Mixture Modelling}
 \description{
 Fits Bayesian random-effects meta-analytic mixture models in which the true study effects are drawn from a mixture of normal components with component-specific means and between-study heterogeneity. The mixture model can be combined with step-function selection models (Vevea and Hedges, 1995, \doi{10.1007/BF02294384}) to adjust for publication bias, either with one selection model for all studies or with separate selection models for groups of studies. Models are estimated by Hamiltonian Monte Carlo using 'rstan' and returned as 'stanfit' objects, so posterior summaries, posterior predictive checks and marginal likelihoods for model comparison (via 'bridgesampling') are readily available. Also includes a data simulator and the nudging meta-analysis data of Mertens et al. (2022) \doi{10.1073/pnas.2107346118}.
 }
@@ -39,6 +39,7 @@ Stan Development Team (2024). RStan: the R interface to Stan.
 Useful links:
 \itemize{
   \item \url{https://github.com/MaxMaier42/metamix}
+  \item \url{https://maxmaier42.github.io/metamix/}
   \item Report bugs at \url{https://github.com/MaxMaier42/metamix/issues}
 }
 

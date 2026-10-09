@@ -1,5 +1,5 @@
 Package: metamixr
-Title: 'MetaMix': Bayesian Meta-Analytic Mixture Models
+Title: Bayesian Meta-Analytic Mixture Modelling
 Version: 0.1.0
 Authors@R: c(
     person("Maximilian", "Maier", email = "maximilianmaier0401@gmail.com",
@@ -18,7 +18,7 @@ Description: Fits Bayesian random-effects meta-analytic mixture models in which
     simulator and the nudging meta-analysis data of Mertens et al. (2022)
     <doi:10.1073/pnas.2107346118>.
 License: MIT + file LICENSE
-URL: https://github.com/MaxMaier42/metamix
+URL: https://github.com/MaxMaier42/metamix, https://maxmaier42.github.io/metamix/
 BugReports: https://github.com/MaxMaier42/metamix/issues
 Encoding: UTF-8
 Language: en-GB
